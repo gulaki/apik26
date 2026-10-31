@@ -319,8 +319,10 @@ def random_bool_expr(rng, depth, top=False):
 
 
 def test_random_boolean_expressions_match_python(build_scribe):
-    rng = random.Random(20261022)  # fixed seed: the same cases every run
-    expressions = [random_bool_expr(rng, 4, top=True) for _ in range(60)]
+    from conftest import random_count, random_seed
+
+    rng = random.Random(random_seed(20261022))  # fixed seed: the same cases every run
+    expressions = [random_bool_expr(rng, 4, top=True) for _ in range(random_count(60))]
     settings = [dict(a=rng.randint(-3, 3), b=rng.randint(-3, 3), c=rng.randint(-3, 3),
                      p=rng.random() < 0.5, q=rng.random() < 0.5) for _ in range(6)]
     lines, expected = [], []

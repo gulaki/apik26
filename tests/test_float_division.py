@@ -26,7 +26,7 @@ from fractions import Fraction
 
 import pytest
 
-from conftest import C_COMPILER, STRICT_FLAGS, require_cc, require_ubsan
+from conftest import C_COMPILER, STRICT_FLAGS, random_count, random_seed, require_cc, require_ubsan
 from scribe_lang.emitter import _HELPERS
 from scribe_lang.types import F32, F64, round_float, round_to_f32
 
@@ -119,9 +119,9 @@ FIXED = [
 
 
 def random_pairs(count, seed):
-    rng = random.Random(seed)
+    rng = random.Random(random_seed(seed))
     pairs = []
-    for _ in range(count):
+    for _ in range(random_count(count)):
         kind = rng.random()
         if kind < 0.5:
             # Any magnitudes, including subnormals and overflowing quotients.

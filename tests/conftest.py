@@ -62,8 +62,42 @@ def require_cc() -> str:
     return C_COMPILER
 
 
+# The random tests have fixed seeds and sizes, so every run checks the same
+# cases. SCRIBE_RANDOM_SCALE multiplies their sizes and SCRIBE_RANDOM_SEED
+# gives them other seeds: the weekly workflow sets both.
+def random_settings() -> tuple[int, int | None]:
+    """(scale, seed or None), from the environment."""
+    values = {}
+    for name, minimum in (("SCRIBE_RANDOM_SCALE", 1), ("SCRIBE_RANDOM_SEED", 0)):
+        text = os.environ.get(name, "")
+        if not text:
+            continue
+        if not text.isdigit() or int(text) < minimum:
+            raise pytest.UsageError(f"{name} must be a whole number of at least {minimum}, not {text!r}")
+        values[name] = int(text)
+    return values.get("SCRIBE_RANDOM_SCALE", 1), values.get("SCRIBE_RANDOM_SEED")
+
+
+def random_count(count: int) -> int:
+    return count * random_settings()[0]
+
+
+def random_seed(seed: int) -> int:
+    """`seed`, or with SCRIBE_RANDOM_SEED a seed made from both."""
+    extra = random_settings()[1]
+    return seed if extra is None else seed * 1_000_003 + extra + 1
+
+
 def pytest_configure(config):
     required_tools()  # a misspelt SCRIBE_REQUIRE stops the run at once
+    random_settings()
+
+
+def pytest_report_header(config):
+    scale, seed = random_settings()
+    if scale != 1 or seed is not None:
+        return f"random tests: SCRIBE_RANDOM_SCALE={scale} SCRIBE_RANDOM_SEED={'' if seed is None else seed}"
+    return None
 
 STRICT_FLAGS = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra"]
 # Any undefined behaviour the generated C reaches stops the program with a
