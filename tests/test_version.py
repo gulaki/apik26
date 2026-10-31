@@ -3,8 +3,12 @@ reads it, and CHANGELOG.md's newest release must agree with it."""
 import re
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib
+except ImportError:  # Python 3.10: the same parser, installed by the test extra
+    import tomli as tomllib
 
 import scribe_lang
 

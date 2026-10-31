@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["lark>=1.1,<2"]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "tomli>=2; python_version < '3.11'"]
 
 [project.scripts]
 scribe = "scribe_lang.cli:main"
