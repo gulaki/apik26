@@ -1,0 +1,21 @@
+# Weekly pull requests for newer GitHub Actions (pinned by commit SHA in the
+# workflows) and Python packages (lark, and the test extra's pytest).
+# The vendored web files are not a package; the weekly workflow reports
+# newer versions of them instead.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
