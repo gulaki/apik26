@@ -8,7 +8,8 @@ working with them.
 
 Scribe compiles to strictly conforming ISO C, and a program that compiles
 must never reach undefined behaviour. Every change keeps that true, and
-keeps what already works working: the whole test suite passes before
+keeps what already works working: [CI](.github/workflows/ci.yml) runs
+the whole test suite on Linux, macOS, Windows and WebAssembly before
 anything is merged.
 
 ## How a change is made
@@ -36,13 +37,14 @@ anything is merged.
 ## Running the tests
 
 ```sh
-pip install -e . pytest
+pip install -e ".[test]"
 python -m pytest                     # everything
 SCRIBE_SANITIZE=1 python -m pytest   # also build every program with UBSan
 ```
 
 A test that needs a missing tool (a C compiler, UBSan, make, node, emcc)
-skips itself.
+skips itself locally. CI names the tools each job must have in
+`SCRIBE_REQUIRE`, and there a missing tool fails the test instead.
 
 ## Error codes
 

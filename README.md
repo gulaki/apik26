@@ -127,6 +127,7 @@ Add `--diagnostics-format json` for machine-readable output. Codes, what they me
 ## Test
 
 ```bash
+pip install -e ".[test]"
 python -m pytest                     # everything, including compiling the docs' examples
 SCRIBE_SANITIZE=1 python -m pytest   # also build every run with UBSan
 ```
@@ -137,6 +138,14 @@ libubsan), UBSan runs in trap mode: undefined behaviour still stops the
 program, but without a report, and the test summary says so. If UBSan cannot
 be built at all, the tests that need it are skipped, and `SCRIBE_SANITIZE=1`
 stops the run with an error.
+
+`CC` chooses the C compiler (`CC=clang python -m pytest`). `SCRIBE_REQUIRE`
+lists tools that must be there, from `cc`, `ubsan`, `make`, `node` and
+`emcc`: a test that needs one of them fails instead of skipping.
+[CI](.github/workflows/ci.yml) runs the suite this way on every pull request
+and every push to `main`: Linux with gcc (Python 3.10, the oldest supported)
+and with clang and UBSan on every program, macOS, Windows with MinGW-w64 gcc,
+and the WebAssembly tests with Emscripten and node.
 
 ## Architecture
 
