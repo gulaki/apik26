@@ -14,8 +14,9 @@ rounds `+ - * /`:
   `x // 0.0` is ±inf (nan for 0 // 0), `x % 0.0` is nan.
 
 The helpers are checked against exact rational arithmetic (`Fraction`) by a
-small C harness that reads and writes hexadecimal floats, since `print` only
-shows two decimals."""
+small C harness, since `print` only shows two decimals. It reads and writes
+the floats' bit patterns as hexadecimal integers, so no C library's float
+formatting (MinGW's `%a`, for one) gets in the way."""
 import math
 import os
 import random
@@ -27,7 +28,7 @@ import pytest
 
 from conftest import C_COMPILER, STRICT_FLAGS, require_cc, require_ubsan
 from scribe_lang.emitter import _HELPERS
-from scribe_lang.types import F32, F64, round_float
+from scribe_lang.types import F32, F64, round_float, round_to_f32
 
 
 # -- reference: exact arithmetic ----------------------------------------------------
@@ -87,7 +88,21 @@ def same(a, b):
 # -- inputs ---------------------------------------------------------------------------
 
 def to_f32(x):
-    return struct.unpack("f", struct.pack("f", x))[0]
+    """`x` rounded to the nearest f32 (inf past the largest)."""
+    return x if not math.isfinite(x) else round_to_f32(Fraction(x))
+
+
+FORMATS = {F64: ("<d", "<Q", 16), F32: ("<f", "<I", 8)}
+
+
+def to_bits(x, t):
+    float_format, int_format, digits = FORMATS[t]
+    return f"{struct.unpack(int_format, struct.pack(float_format, x))[0]:0{digits}x}"
+
+
+def from_bits(text, t):
+    float_format, int_format, _ = FORMATS[t]
+    return struct.unpack(float_format, struct.pack(int_format, int(text, 16)))[0]
 
 
 SPECIAL = [0.0, -0.0, math.inf, -math.inf, math.nan, 1.0, -1.0, 0.1, -0.1, 2.5, -7.5,
@@ -147,7 +162,7 @@ def helper_source(*names):
     for name in names:
         need(name)
     includes = sorted({include for name in wanted for include in _HELPERS[name].includes})
-    lines = [f"#include <{include}>" for include in ["stdio.h", "stdlib.h", *includes]]
+    lines = [f"#include <{include}>" for include in ["inttypes.h", "stdio.h", "stdlib.h", "string.h", *includes]]
     for name, helper in _HELPERS.items():
         if name in wanted:
             lines += helper.lines
@@ -157,20 +172,34 @@ def helper_source(*names):
 HARNESS_MAIN = {
     F64: """
 int main(void) {
-    char a[64], b[64];
-    while (scanf("%63s %63s", a, b) == 2) {
-        double x = strtod(a, NULL), y = strtod(b, NULL);
-        printf("%a %a\\n", scribe_floordiv_f64(x, y), scribe_mod_f64(x, y));
+    char a[32], b[32];
+    while (scanf("%31s %31s", a, b) == 2) {
+        uint64_t bits[2] = {strtoull(a, NULL, 16), strtoull(b, NULL, 16)};
+        double x, y, q, r;
+        memcpy(&x, &bits[0], sizeof x);
+        memcpy(&y, &bits[1], sizeof y);
+        q = scribe_floordiv_f64(x, y);
+        r = scribe_mod_f64(x, y);
+        memcpy(&bits[0], &q, sizeof q);
+        memcpy(&bits[1], &r, sizeof r);
+        printf("%016" PRIx64 " %016" PRIx64 "\\n", bits[0], bits[1]);
     }
     return 0;
 }
 """,
     F32: """
 int main(void) {
-    char a[64], b[64];
-    while (scanf("%63s %63s", a, b) == 2) {
-        float x = strtof(a, NULL), y = strtof(b, NULL);
-        printf("%a %a\\n", (double)scribe_floordiv_f32(x, y), (double)scribe_mod_f32(x, y));
+    char a[32], b[32];
+    while (scanf("%31s %31s", a, b) == 2) {
+        uint32_t bits[2] = {(uint32_t)strtoul(a, NULL, 16), (uint32_t)strtoul(b, NULL, 16)};
+        float x, y, q, r;
+        memcpy(&x, &bits[0], sizeof x);
+        memcpy(&y, &bits[1], sizeof y);
+        q = scribe_floordiv_f32(x, y);
+        r = scribe_mod_f32(x, y);
+        memcpy(&bits[0], &q, sizeof q);
+        memcpy(&bits[1], &r, sizeof r);
+        printf("%08" PRIx32 " %08" PRIx32 "\\n", bits[0], bits[1]);
     }
     return 0;
 }
@@ -188,10 +217,10 @@ def run_harness(t, pairs, tmp_path, flags):
     build = subprocess.run([C_COMPILER, *STRICT_FLAGS, "-Werror", *flags, "-o", str(exe), str(c_file), "-lm"],
                            capture_output=True, text=True)
     assert build.returncode == 0, build.stderr
-    stdin = "".join(f"{x.hex()} {y.hex()}\n" for x, y in pairs)
+    stdin = "".join(f"{to_bits(x, t)} {to_bits(y, t)}\n" for x, y in pairs)
     proc = subprocess.run([str(exe)], input=stdin, capture_output=True, text=True, timeout=60)
     assert proc.returncode == 0, proc.stderr
-    return [tuple(float.fromhex(v) for v in line.split()) for line in proc.stdout.splitlines()]
+    return [tuple(from_bits(v, t) for v in line.split()) for line in proc.stdout.splitlines()]
 
 
 @pytest.mark.parametrize("t", [F64, F32], ids=["f64", "f32"])
