@@ -147,6 +147,12 @@ and every push to `main`: Linux with gcc (Python 3.10, the oldest supported)
 and with clang and UBSan on every program, macOS, Windows with MinGW-w64 gcc,
 and the WebAssembly tests with Emscripten and node.
 
+The random tests use fixed seeds, so every run checks the same cases.
+`SCRIBE_RANDOM_SCALE=10` runs ten times as many, and `SCRIBE_RANDOM_SEED=n`
+picks other cases. Every Monday the [weekly workflow](.github/workflows/weekly.yml)
+runs CI on the newest runner images and Emscripten with both set (the seed is
+the run number), and opens a `weekly-ci` issue if anything fails.
+
 ## Architecture
 
 ```text
