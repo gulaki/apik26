@@ -9,6 +9,9 @@ description = "Scribe language compiler implemented with Python and Lark"
 requires-python = ">=3.10"
 dependencies = ["lark>=1.1,<2"]
 
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
 [project.scripts]
 scribe = "scribe_lang.cli:main"
 
