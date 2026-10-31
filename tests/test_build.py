@@ -42,11 +42,11 @@ def test_native_builds_have_no_link_flags(tmp_path, system, line):
 def test_the_makefile_runs_the_chosen_compiler(tmp_path):
     # Make predefines CC=cc; the build file must still use its own compiler,
     # while a CC from the command line wins.
-    import shutil
     import subprocess
 
-    if shutil.which("make") is None:
-        pytest.skip("make not installed")
+    from conftest import require_tool
+
+    require_tool("make")
     config = BuildConfig(compiler="my-cc")
     (tmp_path / "Makefile").write_text(generate("make", tmp_path, config), encoding="utf-8")
     (tmp_path / "prog.c").write_text("int main(void) { return 0; }\n", encoding="utf-8")

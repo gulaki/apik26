@@ -8,12 +8,62 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from typing import NoReturn
+
 import pytest
 
 from scribe_lang.compiler import Compiler
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
-C_COMPILER = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+
+# The tools a test may need. Without one the test skips, unless
+# SCRIBE_REQUIRE (a comma-separated list of these names) includes it: CI
+# names the tools each job installs, and there a missing tool fails the test,
+# so a green run never means a smaller run.
+TOOLS = ("cc", "ubsan", "make", "node", "emcc")
+
+
+def required_tools() -> set[str]:
+    required = {name.strip() for name in os.environ.get("SCRIBE_REQUIRE", "").split(",") if name.strip()}
+    unknown = required - set(TOOLS)
+    if unknown:
+        raise pytest.UsageError(f"SCRIBE_REQUIRE: unknown tools {sorted(unknown)}; the tools are {', '.join(TOOLS)}")
+    return required
+
+
+def missing(tool: str, reason: str) -> NoReturn:
+    """Skip the test for lack of `tool`, or fail it if SCRIBE_REQUIRE names it."""
+    if tool in required_tools():
+        pytest.fail(f"{reason}, but SCRIBE_REQUIRE lists {tool}", pytrace=False)
+    pytest.skip(reason)
+
+
+def require_tool(name: str) -> str:
+    """The path of the program `name` (make, node, emcc), or skip or fail."""
+    path = shutil.which(name)
+    if path is None:
+        missing(name, f"{name} not installed")
+    return path
+
+
+def find_c_compiler(environ) -> str | None:
+    """$CC if set, else cc, gcc or clang from PATH."""
+    if environ.get("CC"):
+        return shutil.which(environ["CC"])
+    return shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+
+
+C_COMPILER = find_c_compiler(os.environ)
+
+
+def require_cc() -> str:
+    if C_COMPILER is None:
+        missing("cc", "no C compiler ($CC, cc, gcc or clang) found")
+    return C_COMPILER
+
+
+def pytest_configure(config):
+    required_tools()  # a misspelt SCRIBE_REQUIRE stops the run at once
 
 STRICT_FLAGS = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra"]
 # Any undefined behaviour the generated C reaches stops the program with a
@@ -51,9 +101,10 @@ def ubsan_flags() -> tuple[str, ...] | None:
 def require_ubsan() -> list[str]:
     """The UBSan flags, or skip the test when the compiler cannot build with
     UBSan at all."""
+    require_cc()
     flags = ubsan_flags()
     if flags is None:
-        pytest.skip("the C compiler cannot build with UBSan, not even in trap mode")
+        missing("ubsan", "the C compiler cannot build with UBSan, not even in trap mode")
     return list(flags)
 
 
@@ -109,8 +160,7 @@ def build_scribe(compiler, tmp_path):
     (for example a label at the end of a block) fails the test. Skipped when
     no C compiler is installed.
     """
-    if C_COMPILER is None:
-        pytest.skip("no C compiler (cc/gcc/clang) found on PATH")
+    require_cc()
 
     def build(source: str, flags: list[str]):
         result = compiler.compile(source, filename="t.scribe")

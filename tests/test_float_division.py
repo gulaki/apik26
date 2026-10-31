@@ -25,7 +25,7 @@ from fractions import Fraction
 
 import pytest
 
-from conftest import C_COMPILER, STRICT_FLAGS, require_ubsan
+from conftest import C_COMPILER, STRICT_FLAGS, require_cc, require_ubsan
 from scribe_lang.emitter import _HELPERS
 from scribe_lang.types import F32, F64, round_float
 
@@ -179,8 +179,7 @@ int main(void) {
 
 
 def run_harness(t, pairs, tmp_path, flags):
-    if C_COMPILER is None:
-        pytest.skip("no C compiler (cc/gcc/clang) found on PATH")
+    require_cc()
     suffix = "f32" if t is F32 else "f64"
     c_file = tmp_path / f"harness_{suffix}.c"
     c_file.write_text(helper_source(f"scribe_floordiv_{suffix}", f"scribe_mod_{suffix}") + HARNESS_MAIN[t],

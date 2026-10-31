@@ -171,11 +171,11 @@ def test_build_file_paths_are_relative_to_the_build_file(tmp_path, system):
 
 def test_generated_makefile_builds_the_program(tmp_path, run_scribe):
     # run_scribe is only requested so the test skips without a C compiler.
-    import shutil
     import subprocess
 
-    if shutil.which("make") is None:
-        pytest.skip("make not installed")
+    from conftest import require_tool
+
+    require_tool("make")
     src = tmp_path / "prog.scribe"
     src.write_text('print "built"\n', encoding="utf-8")
     out = tmp_path / "gen" / "prog.c"
@@ -257,10 +257,9 @@ def test_conditions_have_a_single_pair_of_parentheses(compiler):
 def test_generated_c_builds_without_any_warning(compiler, tmp_path):
     import subprocess
 
-    from conftest import C_COMPILER, EXAMPLES
+    from conftest import EXAMPLES, require_cc
 
-    if C_COMPILER is None:
-        pytest.skip("no C compiler")
+    C_COMPILER = require_cc()
     for example in sorted(EXAMPLES.glob("*.scribe")):
         c_file = tmp_path / f"{example.stem}.c"
         result = compiler.compile(example.read_text(encoding="utf-8"))

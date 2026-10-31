@@ -167,13 +167,12 @@ def test_web_makefile(source):
 
 
 def test_the_page_script_is_valid_javascript(tmp_path):
-    import shutil
     import subprocess
     from pathlib import Path
 
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("node not installed")
+    from conftest import require_tool
+
+    node = require_tool("node")
     script = Path(__file__).resolve().parent.parent / "scribe_lang" / "web" / "scribe-term.js"
     module = tmp_path / "scribe-term.mjs"  # node --check reads .mjs as a module
     module.write_text(script.read_text(encoding="utf-8"), encoding="utf-8")
@@ -201,11 +200,11 @@ def test_runtime_errors_are_red_when_scribe_color_errors_is_defined(build_scribe
 # browser itself is checked by hand.
 
 def _tools():
-    import shutil
 
-    missing = [tool for tool in ("emcc", "make", "node") if shutil.which(tool) is None]
-    if missing:
-        pytest.skip(f"needs {', '.join(missing)}")
+    from conftest import require_tool
+
+    for tool in ("emcc", "make", "node"):
+        require_tool(tool)
 
 
 def build_with_emcc(source_path, *args):
