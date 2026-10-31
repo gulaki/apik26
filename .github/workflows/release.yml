@@ -1,0 +1,50 @@
+# When a commit that changes VERSION.txt reaches main, tag it vX.Y.Z and
+# publish a GitHub Release whose notes are that version's CHANGELOG.md
+# section. A version that is already tagged is left alone.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [VERSION.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      # VERSION.txt, CHANGELOG.md, the package and `scribe --version` agree.
+      - run: python -m pytest -q tests/test_version.py tests/test_changelog_script.py
+      - name: Tag and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          version="$(cat VERSION.txt)"
+          if git rev-parse --verify --quiet "refs/tags/v$version" > /dev/null; then
+            echo "v$version is already tagged."
+            exit 0
+          fi
+          python .github/scripts/changelog.py notes "$version" \
+            --link-base "https://github.com/$REPO/blob/v$version/" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$version" --target "$GITHUB_SHA" --title "Scribe $version" \
+            --notes-file "$RUNNER_TEMP/notes.md"

@@ -27,12 +27,15 @@ anything is merged.
    catalogue ([`docs/errors.md`](docs/errors.md)) describe the language as
    it is. `tests/test_docs.py` compiles and runs every example in them.
 5. **A changelog entry.** A pull request that changes `scribe_lang/` adds
-   an entry under "Unreleased" in [`CHANGELOG.md`](CHANGELOG.md). A change
-   with nothing to tell users (a refactor, a test) takes the `no-changelog`
-   label instead.
-6. **Releases.** After the merge, the "Unreleased" entries move under a new
-   version heading, and `VERSION.txt` gets the same version (the rules are at
-   the top of the changelog).
+   an entry under "Unreleased" in [`CHANGELOG.md`](CHANGELOG.md), and the
+   [Changelog check](.github/workflows/changelog.yml) fails without one. A
+   change with nothing to tell users (a refactor, a test) takes the
+   `no-changelog` label instead.
+6. **Releases.** After the merge, a small release pull request moves the
+   "Unreleased" entries under a new version heading and writes the same
+   version in `VERSION.txt` (the rules are at the top of the changelog). When
+   it is merged, the [Release workflow](.github/workflows/release.yml) tags
+   `vX.Y.Z` and publishes a GitHub Release with that section as its notes.
 
 ## Running the tests
 

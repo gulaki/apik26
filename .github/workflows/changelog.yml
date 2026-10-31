@@ -1,0 +1,35 @@
+# A pull request that changes the compiler (scribe_lang/) adds an entry
+# under "Unreleased" in CHANGELOG.md, or carries the no-changelog label.
+name: Changelog
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  changelog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check for an Unreleased entry
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          NO_CHANGELOG: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
+        run: |
+          if [ "$NO_CHANGELOG" = "true" ]; then
+            echo "The no-changelog label is set: no entry needed."
+            exit 0
+          fi
+          if git diff --quiet "$BASE_SHA"...HEAD -- scribe_lang/; then
+            echo "scribe_lang/ is unchanged: no entry needed."
+            exit 0
+          fi
+          git show "$BASE_SHA:CHANGELOG.md" > "$RUNNER_TEMP/base-changelog.md"
+          python3 .github/scripts/changelog.py check "$RUNNER_TEMP/base-changelog.md" CHANGELOG.md

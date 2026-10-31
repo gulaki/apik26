@@ -17,7 +17,9 @@ first number stays 0, and:
 Each pull request merged into `main` that changes the compiler is one
 release; one that only changes documentation keeps the version. To release,
 move the "Unreleased" entries under a new `## X.Y.Z - date` heading and write
-the same version in `VERSION.txt` (a test checks that they agree). The
+the same version in `VERSION.txt` (a test checks that they agree). When that
+commit reaches `main`, a workflow tags it `vX.Y.Z` and publishes a GitHub
+Release with the section as its notes. The
 versions up to 0.5.1 were worked out afterwards from the commits and pull
 requests; only 0.0.1 and 0.1.0 were named at the time. The roadmap's stages (M1, M2, ... in
 [`docs/whitepaper.md`](docs/whitepaper.md#4-roadmap)) are plans, not version
