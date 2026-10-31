@@ -213,7 +213,9 @@ def _random_power_cases(seed, count):
     i64, from both sides."""
     import random
 
-    rng = random.Random(seed)
+    from conftest import random_seed
+
+    rng = random.Random(random_seed(seed))
     cases = []
     while len(cases) < count:
         base = rng.choice([rng.randint(-40, 40), rng.choice([3037000499, -3037000499, 3037000500, 2097151, 2097152, -2097152, 55108, 6208])])
@@ -230,9 +232,10 @@ def _random_power_cases(seed, count):
 
 
 def test_random_integer_powers_match_python(build_scribe):
-    from conftest import require_ubsan
+    from conftest import random_count, require_ubsan
 
-    fits = [(b, e, v) for b, e, v in _random_power_cases(20261023, 400) if INT64_MIN <= v <= INT64_MAX][:250]
+    fits = [(b, e, v) for b, e, v in _random_power_cases(20261023, random_count(400))
+            if INT64_MIN <= v <= INT64_MAX][:random_count(250)]
     lines = ["i64: b, e"]
     for b, e, _ in fits:
         lines += [f"b, e = {b}, {e}", "print b ** e"]

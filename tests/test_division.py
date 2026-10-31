@@ -199,9 +199,9 @@ def test_random_expressions_match_python(build_scribe):
     program and are tested above."""
     import random
 
-    from conftest import require_ubsan
+    from conftest import random_count, random_seed, require_ubsan
 
-    rng = random.Random(20261023)
+    rng = random.Random(random_seed(20261023))
     values = [INT64_MIN, INT64_MIN + 1, -2**62, -10**9, -97, -8, -3, -2, -1,
               1, 2, 3, 8, 97, 10**9, 2**62, INT64_MAX - 1, INT64_MAX]
     ops = ["//", "%", "//", "%", "+", "-", "*"]
@@ -215,7 +215,7 @@ def test_random_expressions_match_python(build_scribe):
         return z
 
     lines, expected = ["i64: a, b, c"], []
-    while len(expected) < 300:
+    while len(expected) < random_count(300):
         a, b, c = (rng.choice(values) for _ in range(3))
         op1, op2 = rng.choice(ops), rng.choice(ops)
         try:
