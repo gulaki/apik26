@@ -52,6 +52,13 @@ def test_the_notes_of_a_release_are_its_section():
     assert load().notes(CHANGELOG, "0.6.1") == "Pull request #11.\n"
 
 
+def test_relative_links_can_point_at_the_release():
+    text = "## 1.0.0 - 2026-11-01\n\nSee [errors](docs/errors.md#codes), [web](https://x.org) and [here](#top).\n"
+    assert load().notes(text, "1.0.0", link_base="https://github.com/o/r/blob/v1.0.0/") == (
+        "See [errors](https://github.com/o/r/blob/v1.0.0/docs/errors.md#codes), [web](https://x.org) and [here](#top).\n"
+    )
+
+
 def test_a_missing_release_is_an_error():
     with pytest.raises(LookupError, match="0.9.9"):
         load().notes(CHANGELOG, "0.9.9")
