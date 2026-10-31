@@ -1,0 +1,42 @@
+name: Bug report
+description: A program that compiles wrongly, a wrong error, or a crash of the compiler
+labels: [bug]
+body:
+  - type: textarea
+    id: source
+    attributes:
+      label: Scribe program
+      description: The smallest program that shows the problem.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What happened, and what you expected
+      description: Compiler output, the program's output or exit status, or the C compiler's error.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: scribe --version
+      placeholder: scribe 0.6.2
+    validations:
+      required: true
+  - type: input
+    id: c-compiler
+    attributes:
+      label: C compiler and platform
+      placeholder: Apple clang 17 on macOS 26, gcc 14 on Ubuntu 24.04, emcc 6.0.13, ...
+  - type: textarea
+    id: generated-c
+    attributes:
+      label: Generated C (if relevant)
+      render: c
+  - type: checkboxes
+    id: ub
+    attributes:
+      label: Undefined behaviour
+      options:
+        - label: The generated C reaches undefined behaviour (UBSan reports it, or the C standard says so)

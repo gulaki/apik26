@@ -1,0 +1,29 @@
+name: Feature or design proposal
+description: A new language feature, a change to the language, or a change to the compiler
+labels: [proposal]
+body:
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: A Scribe program that would use it, and what it should print or report.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The problem it solves. Mention related roadmap stages (docs/whitepaper.md) or design notes.
+    validations:
+      required: true
+  - type: textarea
+    id: c
+    attributes:
+      label: C lowering and undefined behaviour
+      description: How it could become C, and any undefined behaviour it must guard against.
+  - type: textarea
+    id: breaks
+    attributes:
+      label: What it would break
+      description: Programs that would change meaning or stop compiling, if any.
