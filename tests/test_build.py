@@ -1,5 +1,7 @@
 """Build files: the compiler, flags and outputs come from BuildConfig, so the
 same Make and Ninja generators build native programs and WebAssembly."""
+import os
+
 import pytest
 
 from scribe_lang.build import BUILD_SYSTEMS, BuildConfig
@@ -50,7 +52,10 @@ def test_the_makefile_runs_the_chosen_compiler(tmp_path):
     config = BuildConfig(compiler="my-cc")
     (tmp_path / "Makefile").write_text(generate("make", tmp_path, config), encoding="utf-8")
     (tmp_path / "prog.c").write_text("int main(void) { return 0; }\n", encoding="utf-8")
-    dry = subprocess.run(["make", "-n", "-C", str(tmp_path)], capture_output=True, text=True)
+    # A CC in the environment wins too (make's own rule), so leave it out.
+    env = {name: value for name, value in os.environ.items() if name != "CC"}
+    make = ["make", "-n", "--no-print-directory", "-C", str(tmp_path)]
+    dry = subprocess.run(make, capture_output=True, text=True, env=env)
     assert dry.stdout.startswith("my-cc ")
-    dry = subprocess.run(["make", "-n", "-C", str(tmp_path), "CC=other-cc"], capture_output=True, text=True)
+    dry = subprocess.run([*make, "CC=other-cc"], capture_output=True, text=True, env=env)
     assert dry.stdout.startswith("other-cc ")
