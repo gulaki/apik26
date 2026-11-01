@@ -1,5 +1,12 @@
 # Scribe
 
+[![CI](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql)
+[![Undefined behaviour: checked with UBSan](https://img.shields.io/badge/undefined_behaviour-checked_with_UBSan-brightgreen)](docs/design/ub-catalogue.md)
+[![C11: strictly conforming](https://img.shields.io/badge/C11-strictly_conforming-00599C?logo=c&logoColor=white)](docs/design/lowering.md)
+[![Platforms: Linux, macOS, Windows, WebAssembly](https://img.shields.io/badge/tested_on-Linux_%7C_macOS_%7C_Windows_%7C_WebAssembly-informational)](.github/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
+
 Scribe is a small language that compiles to C. It is meant to be easy to read and
 write, and hard to get wrong: **a program that compiles never reaches
 undefined behaviour in C**. Integer overflow, for example, stops the program
