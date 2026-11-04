@@ -529,6 +529,9 @@ false
 true
 ```
 
+Comparing a value with itself is allowed: `a == a` is `true` for an integer
+or a bool, and `x == x` is `false` only when the float `x` is NaN.
+
 `!=` cannot be chained, because `a != b != c` would not mean that all three
 differ: `1 != 2 != 1` is true in Python. A chain that changes direction, such
 as `a < b > c`, is an error too.
