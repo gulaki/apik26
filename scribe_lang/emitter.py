@@ -548,6 +548,8 @@ class CEmitter:
     _loops: list[_Loop] = field(default_factory=list, init=False)
     # How many loops of each name have been emitted, to number their labels.
     _loop_names: dict[str | None, int] = field(default_factory=dict, init=False)
+    # Set while building a line that compares an integer or bool with itself.
+    _self_comparison: bool = field(default=False, init=False)
 
     def emit_program(self, program: Program, model: SemanticModel) -> str:
         self._body = []
@@ -561,6 +563,7 @@ class CEmitter:
         self._temporaries = 0
         self._loops = []
         self._loop_names = {}
+        self._self_comparison = False
 
         globals_ = [f"{self._c_type(symbol.type)} {c_variable(name)};" for name, symbol in sorted(model.root.symbols.items())]
 
@@ -637,7 +640,20 @@ class CEmitter:
         return name
 
     def _line(self, text: str) -> None:
-        self._body.append(" " * (self._indent * self.indent_width) + text)
+        indent = " " * (self._indent * self.indent_width)
+        if self._self_comparison:
+            # `a == a` is valid Scribe, but gcc and clang warn that the C
+            # comparison is always true or false. Silence that warning for
+            # this statement only (docs/design/lowering.md, "Self-comparisons").
+            self._self_comparison = False
+            self._body += [
+                "#pragma GCC diagnostic push",
+                '#pragma GCC diagnostic ignored "-Wtautological-compare"',
+                indent + text,
+                "#pragma GCC diagnostic pop",
+            ]
+            return
+        self._body.append(indent + text)
 
     def _block_body(self, block: Block) -> None:
         """Emit the inside of a C block: hoisted declarations, then statements.
@@ -790,7 +806,14 @@ class CEmitter:
         operand_type = self._model.operand_type(cmp)
         left = self._operand(cmp.left, operand_type)
         right = self._operand(cmp.right, operand_type)
+        self._note_self_comparison(left, right, operand_type)
         return f"{left} {cmp.operator} {right}"
+
+    def _note_self_comparison(self, left: str, right: str, t: ScalarType) -> None:
+        """Note an integer or bool compared with itself, for `_line`. A float
+        compared with itself is a NaN test, which compilers do not flag."""
+        if not t.is_float and _without_outer_parentheses(left) == _without_outer_parentheses(right):
+            self._self_comparison = True
 
     def _chain(self, chain: ComparisonChain) -> str:
         """`a < b <= c` -> `((a < b) && (b <= c))`. A middle operand that is
@@ -809,10 +832,11 @@ class CEmitter:
             else:
                 first_use.append(text)
                 later_use.append(text)
-        pieces = [
-            f"({first_use[0] if i == 0 else later_use[i]} {op} {first_use[i + 1]})"
-            for i, op in enumerate(chain.operators)
-        ]
+        pieces = []
+        for i, op in enumerate(chain.operators):
+            left, right = first_use[0] if i == 0 else later_use[i], first_use[i + 1]
+            self._note_self_comparison(left, right, operand_type)
+            pieces.append(f"({left} {op} {right})")
         return "(" + " && ".join(pieces) + ")"
 
     def _is_plain(self, expr: Expr) -> bool:
