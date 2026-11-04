@@ -25,6 +25,15 @@ requests; only 0.0.1 and 0.1.0 were named at the time. The roadmap's stages (M1,
 [`docs/whitepaper.md`](docs/whitepaper.md#4-roadmap)) are plans, not version
 numbers.
 
+## Unreleased
+
+### Fixed
+
+- Comparing an integer or bool with itself (`a == a`, `a < a`) no longer
+  makes gcc and clang warn about the generated C (`-Wtautological-compare`):
+  the statement that holds it turns that warning off for itself alone. Found
+  by the weekly run's larger random tests (issue #19).
+
 ## 0.6.2 - 2026-10-30
 
 Pull request #12.

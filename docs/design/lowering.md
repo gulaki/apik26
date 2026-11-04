@@ -118,6 +118,29 @@ expression. That works in a `while` condition and in an `elif` chain, and a
 `goto` can never skip the declaration. (Multiple assignment, whose values are
 whole statements, puts its temporaries in a C block of its own instead.)
 
+### Self-comparisons
+
+`a == a` and `a < a` are valid Scribe: an integer or bool compared with
+itself is always true or always false, and the program prints that. gcc and
+clang warn about the C comparison (`-Wtautological-compare`), and the
+generated C is meant to build without a single warning. So the C statement
+that holds such a comparison, and only that statement, turns the warning
+off and back on:
+
+```c
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-compare"
+    puts((v_a == v_a) ? "true" : "false");
+#pragma GCC diagnostic pop
+```
+
+gcc and clang (and so Emscripten) both read `#pragma GCC diagnostic`; the C
+standard has other compilers ignore a pragma they do not recognise (C11
+6.10.6), so the C stays strictly conforming. The warning stays on everywhere
+else, where an always-true comparison could point at a mistake in the
+compiler. A float compared with itself is not wrapped: `x == x` is false
+for NaN, and compilers do not warn about it.
+
 ## Shape of emitted code
 
 ```c
