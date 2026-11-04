@@ -53,6 +53,14 @@ A test that needs a missing tool (a C compiler, UBSan, make, node, emcc)
 skips itself locally. CI names the tools each job must have in
 `SCRIBE_REQUIRE`, and there a missing tool fails the test instead.
 
+CI's macOS job runs on Intel, because GitHub's Apple silicon runners are
+often short of capacity. Before opening a pull request, run the suite on
+an Apple silicon Mac, with UBSan:
+
+```sh
+SCRIBE_REQUIRE=cc,ubsan,make,node SCRIBE_SANITIZE=1 python -m pytest
+```
+
 ## Error codes
 
 Codes are never renumbered or reused. See
