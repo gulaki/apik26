@@ -43,7 +43,11 @@ anything is merged.
 pip install -e ".[test]"
 python -m pytest                     # everything
 SCRIBE_SANITIZE=1 python -m pytest   # also build every program with UBSan
+python -m pytest --cov               # with coverage of scribe_lang/
 ```
+
+Coverage must not drop below `fail_under` in `pyproject.toml`; CI checks
+it. When a change raises it, raise `fail_under` too.
 
 A test that needs a missing tool (a C compiler, UBSan, make, node, emcc)
 skips itself locally. CI names the tools each job must have in
