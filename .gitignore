@@ -7,3 +7,8 @@ build/
 examples/*/
 !examples/errors/
 !examples/future/
+
+# Coverage outputs (python -m pytest --cov)
+.coverage
+coverage.json
+htmlcov/

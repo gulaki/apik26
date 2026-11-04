@@ -1,6 +1,7 @@
 # Scribe
 
 [![CI](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgulaki.github.io%2Fscribe-lang%2Fcoverage%2Fbadge.json)](https://gulaki.github.io/scribe-lang/coverage/)
 [![CodeQL](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql)
 [![Undefined behaviour: checked with UBSan](https://img.shields.io/badge/undefined_behaviour-checked_with_UBSan-brightgreen)](docs/design/ub-catalogue.md)
 [![C11: strictly conforming](https://img.shields.io/badge/C11-strictly_conforming-00599C?logo=c&logoColor=white)](docs/design/lowering.md)
@@ -137,6 +138,7 @@ Add `--diagnostics-format json` for machine-readable output. Codes, what they me
 pip install -e ".[test]"
 python -m pytest                     # everything, including compiling the docs' examples
 SCRIBE_SANITIZE=1 python -m pytest   # also build every run with UBSan
+python -m pytest --cov               # with coverage of scribe_lang/
 ```
 
 Tests that build C skip themselves when no C compiler is installed. Where the
@@ -153,6 +155,11 @@ lists tools that must be there, from `cc`, `ubsan`, `make`, `node` and
 and every push to `main`: Linux with gcc (Python 3.10, the oldest supported)
 and with clang and UBSan on every program, macOS, Windows with MinGW-w64 gcc,
 and the WebAssembly tests with Emscripten and node.
+
+The [coverage workflow](.github/workflows/coverage.yml) measures line and
+branch coverage of the compiler on every pull request, and fails below the
+`fail_under` level in `pyproject.toml`. On `main` it publishes the
+[report](https://gulaki.github.io/scribe-lang/coverage/) behind the badge.
 
 The random tests use fixed seeds, so every run checks the same cases.
 `SCRIBE_RANDOM_SCALE=10` runs ten times as many, and `SCRIBE_RANDOM_SEED=n`

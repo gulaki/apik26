@@ -1,0 +1,78 @@
+# Coverage of the compiler (scribe_lang/), lines and branches, on every pull
+# request and every push to main. It fails below fail_under in
+# pyproject.toml. On main it publishes the HTML report and the badge data
+# on GitHub Pages: https://gulaki.github.io/scribe-lang/coverage/
+name: Coverage
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CC: clang
+      SCRIBE_REQUIRE: cc,ubsan,make,node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - name: Test with coverage
+        run: python -m pytest -ra --cov --cov-report=term --cov-report=json --cov-report=html
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f coverage.json ]; then
+            {
+              echo "## Coverage"
+              echo
+              echo '```'
+              python -m coverage report --skip-covered || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Build the Pages site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p site
+          mv htmlcov site/coverage
+          python .github/scripts/coverage_badge.py coverage.json site/coverage/badge.json
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: site
+
+  pages:
+    needs: coverage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}coverage/
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
