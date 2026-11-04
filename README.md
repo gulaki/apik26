@@ -1,5 +1,6 @@
 # Scribe
 
+[![Release](https://img.shields.io/github/v/release/gulaki/scribe-lang)](https://github.com/gulaki/scribe-lang/releases/latest)
 [![CI](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgulaki.github.io%2Fscribe-lang%2Fcoverage%2Fbadge.json)](https://gulaki.github.io/scribe-lang/coverage/)
 [![CodeQL](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql)
