@@ -61,9 +61,11 @@ jobs:
             cc: clang
             sanitize: "1"
             require: cc,ubsan,make,node
+          # Intel: the arm64 runners are often short of capacity, and
+          # Apple silicon is tested locally before a pull request.
           - name: macos
-            os: macos-15
-            latest: macos-latest
+            os: macos-15-intel
+            latest: macos-15-intel
             python: "3.x"
             cc: clang
             require: cc,ubsan,make,node
