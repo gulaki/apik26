@@ -1,11 +1,11 @@
-"""The scalar type table and the rule for mixing types (scribe_lang/types.py)."""
+"""The scalar type table and the rule for mixing types (apik26/types.py)."""
 from fractions import Fraction
 import itertools
 
 import pytest
 
-from scribe_lang import types
-from scribe_lang.types import common_type, holds_all
+from apik26 import types
+from apik26.types import common_type, holds_all
 
 
 @pytest.mark.parametrize("a, b, expected", [

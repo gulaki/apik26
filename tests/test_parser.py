@@ -1,9 +1,9 @@
 import pytest
 
-from scribe_lang.ast import Block, Elif, If, Let, Print, While
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.errors import ParseError
-from scribe_lang.parser import Parser
+from apik26.ast import Block, Elif, If, Let, Print, While
+from apik26.diagnostics import Diagnostics
+from apik26.errors import ParseError
+from apik26.parser import Parser
 
 PARSER = Parser()
 
@@ -157,10 +157,10 @@ def test_invalid_syntax_is_rejected(source):
 
 
 def test_parse_error_reports_filename_line_and_column():
-    diags = Diagnostics("prog.scribe")
+    diags = Diagnostics("prog.apik")
     assert PARSER.parse("if 1 > 0 then\n", diags) is None
     (diag,) = diags
-    assert (diag.span.filename, diag.span.line, diag.span.column) == ("prog.scribe", 1, 10)
+    assert (diag.span.filename, diag.span.line, diag.span.column) == ("prog.apik", 1, 10)
 
 
 def test_removed_keywords_are_ordinary_identifiers():
@@ -177,7 +177,7 @@ def test_locations_record_where_a_token_ends():
 # -- syntax error wording -----------------------------------------------------
 
 def syntax_errors(source):
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     assert PARSER.parse(source, diags) is None
     return [(x.code.code, x.span.line, x.span.column, x.message) for x in diags]
 
@@ -208,7 +208,7 @@ def test_syntax_errors_never_mention_grammar_internals():
 
 
 def test_newline_token_is_underlined_on_its_own_line():
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     PARSER.parse("x = \nprint 1\n", diags)
     (diag,) = diags
     assert (diag.span.line, diag.span.end_line, diag.span.end_column) == (1, 1, 6)
@@ -233,7 +233,7 @@ def test_parse_without_a_collector_raises_with_the_diagnostics():
     ({"SOME_NEW_TERMINAL"}, "SOME_NEW_TERMINAL"),
 ])
 def test_describe_expected(expected, words):
-    from scribe_lang.parser import describe_expected
+    from apik26.parser import describe_expected
 
     assert describe_expected(expected) == words
 
@@ -241,7 +241,7 @@ def test_describe_expected(expected, words):
 def test_every_grammar_terminal_has_a_readable_name():
     # Adding a terminal to the grammar without a word for it in parser.py
     # would leak its internal name into error messages.
-    from scribe_lang.parser import _KEYWORDS, _TERMINAL_WORDS
+    from apik26.parser import _KEYWORDS, _TERMINAL_WORDS
 
     terminals = {t.name for t in PARSER._parser.terminals}
     ignored = {"COMMENT"} | {t for t in terminals if t.startswith("__")}
@@ -300,7 +300,7 @@ def test_an_error_at_the_end_of_the_file_ends_recovery():
 
 
 def test_recovery_stops_at_the_error_limit(monkeypatch):
-    import scribe_lang.parser as parser_module
+    import apik26.parser as parser_module
 
     monkeypatch.setattr(parser_module, "MAX_SYNTAX_ERRORS", 3)
     assert len(syntax_errors("a = \n" * 10)) == 3
@@ -316,7 +316,7 @@ def test_a_valid_program_after_recovery_still_returns_none():
 # -- hints for common mistakes ------------------------------------------------
 
 def first_error(source):
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     assert PARSER.parse(source, diags) is None
     return diags.errors[0]
 
@@ -369,7 +369,7 @@ def test_unmatched_closing_brace():
 
 
 def syntax_errors_full(source):
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     PARSER.parse(source, diags)
     return list(diags)
 
@@ -409,7 +409,7 @@ def test_every_hint_message_still_recovers():
 # -- booleans, logical operators and expression conditions ---------------------
 # Precedence, loosest first: or < and < not < comparison < + - < * / < unary.
 
-from scribe_lang.ast import (  # noqa: E402
+from apik26.ast import (  # noqa: E402
     Binary, BoolLit, Comparison, ComparisonChain, Logical, Not, Unary, Variable,
 )
 

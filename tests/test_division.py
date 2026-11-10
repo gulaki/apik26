@@ -3,10 +3,10 @@
 so `a == (a // b) * b + a % b` and `a % b` has the sign of `b`."""
 import pytest
 
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.parser import Parser
-from scribe_lang.semantics import SemanticAnalyzer
-from scribe_lang.types import F32, F64, I64
+from apik26.diagnostics import Diagnostics
+from apik26.parser import Parser
+from apik26.semantics import SemanticAnalyzer
+from apik26.types import F32, F64, I64
 
 PARSER = Parser()
 INT64_MIN = -2**63
@@ -15,7 +15,7 @@ INT64_MAX = 2**63 - 1
 
 def analyze(source):
     """Parse and type-check only (no C), as (diagnostics, model)."""
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(source, diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     model = SemanticAnalyzer().analyze(program, diagnostics)
@@ -42,9 +42,9 @@ def test_floor_division_and_remainder_bind_like_multiplication():
     ("-9223372036854775808 % -1", 0),
     ("4294967296 * 4294967296 // 4294967296", 4294967296),
 ])
-def test_constants_fold_like_python(run_scribe, source, folded):
+def test_constants_fold_like_python(run_apik, source, folded):
     assert eval(source) == folded
-    assert run_scribe(f"print {source}\n") == f"{folded}\n"
+    assert run_apik(f"print {source}\n") == f"{folded}\n"
 
 
 @pytest.mark.parametrize("source, position", [
@@ -90,14 +90,14 @@ def test_floor_division_of_a_bool_is_a_bool_error():
 
 def test_floor_division_and_remainder_use_checked_helpers(compiler):
     c = compiler.compile("a = 7\nb = 2\nprint a // b\nprint a % b\n").c_source
-    assert "scribe_floordiv_i64(v_a, v_b, 0)" in c
-    assert "scribe_mod_i64(v_a, v_b, 1)" in c
+    assert "apik_floordiv_i64(v_a, v_b, 0)" in c
+    assert "apik_mod_i64(v_a, v_b, 1)" in c
 
 
 GRID = [INT64_MIN, INT64_MIN + 1, -10, -7, -3, -2, -1, 0, 1, 2, 3, 7, 10, INT64_MAX - 1, INT64_MAX]
 
 
-def test_runtime_values_match_python(run_scribe):
+def test_runtime_values_match_python(run_apik):
     """Every pair of the grid, except the ones that stop the program."""
     lines, expected = ["i64: a, b"], []
     for a in GRID:
@@ -110,24 +110,24 @@ def test_runtime_values_match_python(run_scribe):
             if not (a == INT64_MIN and b == -1):
                 lines.append("print a // b")
                 expected.append(a // b)
-    output = run_scribe("\n".join(lines) + "\n")
+    output = run_apik("\n".join(lines) + "\n")
     assert output.split() == [str(v) for v in expected]
 
 
-def test_division_identity_holds(run_scribe):
+def test_division_identity_holds(run_apik):
     lines, expected = ["i64: a, b"], []
     for a in (-17, -1, 0, 5, 23):
         for b in (-5, -3, 3, 4):
             lines.append(f"a, b = {a}, {b}")
             lines.append("print (a // b) * b + a % b == a and (a % b == 0 or (a % b < 0) == (b < 0))")
             expected.append("true")
-    assert run_scribe("\n".join(lines) + "\n").split() == expected
+    assert run_apik("\n".join(lines) + "\n").split() == expected
 
 
 @pytest.mark.parametrize("program, message", [
-    ("i64: a = 7, b = 0\nprint a // b\n", "t.scribe:2:9: runtime error: division by zero\n"),
-    ("i64: a = 7, b = 0\nprint a % b\n", "t.scribe:2:9: runtime error: division by zero\n"),
-    ("i64: a = -9223372036854775808\nb = -1\nprint a // b\n", "t.scribe:3:9: runtime error: integer overflow\n"),
+    ("i64: a = 7, b = 0\nprint a // b\n", "t.apik:2:9: runtime error: division by zero\n"),
+    ("i64: a = 7, b = 0\nprint a % b\n", "t.apik:2:9: runtime error: division by zero\n"),
+    ("i64: a = -9223372036854775808\nb = -1\nprint a // b\n", "t.apik:3:9: runtime error: integer overflow\n"),
 ])
 def test_runtime_errors(run_trapping, program, message):
     assert run_trapping(program) == message
@@ -138,9 +138,9 @@ def test_remainder_of_the_smallest_i64_by_minus_one_is_zero(run_trapping_or_outp
     assert run_trapping_or_output("i64: a = -9223372036854775808\nb = -1\nprint a % b\n") == (0, "0\n")
 
 
-def test_remainder_as_a_truth_test(run_scribe):
+def test_remainder_as_a_truth_test(run_apik):
     source = "n = 1\nwhile n <= 6 {\n    if n % 2 {\n        print n\n    }\n    n = n + 1\n}\n"
-    assert run_scribe(source) == "1\n3\n5\n"
+    assert run_apik(source) == "1\n3\n5\n"
 
 
 # -- `/` is float division ---------------------------------------------------------
@@ -158,8 +158,8 @@ def test_remainder_as_a_truth_test(run_scribe):
     ("print 1 / 0\n", "inf\n"),
     ("print 7 / 2 > 3\n", "true\n"),
 ])
-def test_slash_divides_as_floats(run_scribe, source, output):
-    assert run_scribe(source) == output
+def test_slash_divides_as_floats(run_apik, source, output):
+    assert run_apik(source) == output
 
 
 def test_a_constant_quotient_is_a_float():
@@ -187,12 +187,12 @@ def test_a_float_quotient_does_not_fit_an_integer():
 def test_float_division_emits_plain_c(compiler):
     c = compiler.compile("f64: a = 7 / 2\n").c_source
     assert "v_a = (7.0 / 2.0);" in c
-    assert "scribe_div_i64" not in c
+    assert "apik_div_i64" not in c
 
 
 # -- hardening ------------------------------------------------------------------------
 
-def test_random_expressions_match_python(build_scribe):
+def test_random_expressions_match_python(build_apik):
     """Random `//`, `%`, `+`, `-`, `*` expressions over values near zero and
     near the limits, built with -Werror and UBSan. Cases whose Python value
     leaves i64 at any step, or divides by zero, are left out: those stop the
@@ -226,14 +226,14 @@ def test_random_expressions_match_python(build_scribe):
         lines.append(f"a, b, c = {a}, {b}, {c}")
         lines.append(f"print (a {op1} b) {op2} c")
         expected.append(str(value))
-    proc = build_scribe("\n".join(lines) + "\n", [*require_ubsan(), "-Werror"])("")
+    proc = build_apik("\n".join(lines) + "\n", [*require_ubsan(), "-Werror"])("")
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.split() == expected
 
 
 @pytest.mark.parametrize("program, message", [
-    ("a = -9223372036854775808\nb = 0\nprint a % b\n", "t.scribe:3:9: runtime error: division by zero\n"),
-    ("a, b, c = 5, -1, 9223372036854775807\nprint a // b + c * 2\n", "t.scribe:2:18: runtime error: integer overflow\n"),
+    ("a = -9223372036854775808\nb = 0\nprint a % b\n", "t.apik:3:9: runtime error: division by zero\n"),
+    ("a, b, c = 5, -1, 9223372036854775807\nprint a // b + c * 2\n", "t.apik:2:18: runtime error: integer overflow\n"),
 ])
 def test_more_runtime_errors(run_trapping, program, message):
     assert run_trapping(program) == message
@@ -244,6 +244,6 @@ def test_guarded_remainder_never_runs(run_trapping_or_output):
 
 
 @pytest.mark.parametrize("a, b", [(INT64_MAX, 1), (INT64_MAX, -1), (INT64_MIN, 1), (INT64_MIN, 2), (INT64_MIN, INT64_MAX), (INT64_MAX, INT64_MIN)])
-def test_extremes(run_scribe, a, b):
-    out = run_scribe(f"i64: a = {a}, b = {b}\nprint a // b\nprint a % b\n")
+def test_extremes(run_apik, a, b):
+    out = run_apik(f"i64: a = {a}, b = {b}\nprint a // b\nprint a % b\n")
     assert out == f"{a // b}\n{a % b}\n"

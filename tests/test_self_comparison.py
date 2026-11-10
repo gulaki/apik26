@@ -1,5 +1,5 @@
 """Comparing an integer or bool with itself (`a == a`, `a < a`) is valid
-Scribe, but gcc and clang warn that the C comparison is always true or
+APIK, but gcc and clang warn that the C comparison is always true or
 false (-Wtautological-compare). The generated C must build without
 warnings, so the statement that holds such a comparison, and only that one,
 is wrapped in `#pragma GCC diagnostic` lines (docs/design/lowering.md,
@@ -53,6 +53,6 @@ def test_only_the_statements_that_need_it_are_wrapped(compiler):
     ("a = 1\nb = 2\nprint a <= a < b\n", "true\n"),
     ("a = 1\nif a == a {\n    print 7\n}\n", "7\n"),
 ])
-def test_self_comparisons_build_without_warnings_and_run(build_scribe, source, output):
-    proc = build_scribe(source, ["-Werror"])("")
+def test_self_comparisons_build_without_warnings_and_run(build_apik, source, output):
+    proc = build_apik(source, ["-Werror"])("")
     assert (proc.returncode, proc.stdout) == (0, output), proc.stderr

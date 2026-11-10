@@ -10,7 +10,7 @@ try:
 except ImportError:  # Python 3.10: the same parser, installed by the test extra
     import tomli as tomllib
 
-import scribe_lang
+import apik26
 
 ROOT = Path(__file__).resolve().parent.parent
 SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
@@ -46,9 +46,9 @@ def test_pyproject_reads_the_version_file():
 
 
 def test_the_package_reports_the_version():
-    assert scribe_lang.__version__ == version_file()
+    assert apik26.__version__ == version_file()
 
 
 def test_the_command_prints_the_version():
-    run = subprocess.run([sys.executable, "-m", "scribe_lang.cli", "--version"], capture_output=True, text=True)
-    assert (run.returncode, run.stdout) == (0, f"scribe {version_file()}\n")
+    run = subprocess.run([sys.executable, "-m", "apik26.cli", "--version"], capture_output=True, text=True)
+    assert (run.returncode, run.stdout) == (0, f"apik26 {version_file()}\n")

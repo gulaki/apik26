@@ -27,8 +27,8 @@ from fractions import Fraction
 import pytest
 
 from conftest import C_COMPILER, STRICT_FLAGS, random_count, random_seed, require_cc, require_ubsan
-from scribe_lang.emitter import _HELPERS
-from scribe_lang.types import F32, F64, round_float, round_to_f32
+from apik26.emitter import _HELPERS
+from apik26.types import F32, F64, round_float, round_to_f32
 
 
 # -- reference: exact arithmetic ----------------------------------------------------
@@ -178,8 +178,8 @@ int main(void) {
         double x, y, q, r;
         memcpy(&x, &bits[0], sizeof x);
         memcpy(&y, &bits[1], sizeof y);
-        q = scribe_floordiv_f64(x, y);
-        r = scribe_mod_f64(x, y);
+        q = apik_floordiv_f64(x, y);
+        r = apik_mod_f64(x, y);
         memcpy(&bits[0], &q, sizeof q);
         memcpy(&bits[1], &r, sizeof r);
         printf("%016" PRIx64 " %016" PRIx64 "\\n", bits[0], bits[1]);
@@ -195,8 +195,8 @@ int main(void) {
         float x, y, q, r;
         memcpy(&x, &bits[0], sizeof x);
         memcpy(&y, &bits[1], sizeof y);
-        q = scribe_floordiv_f32(x, y);
-        r = scribe_mod_f32(x, y);
+        q = apik_floordiv_f32(x, y);
+        r = apik_mod_f32(x, y);
         memcpy(&bits[0], &q, sizeof q);
         memcpy(&bits[1], &r, sizeof r);
         printf("%08" PRIx32 " %08" PRIx32 "\\n", bits[0], bits[1]);
@@ -211,7 +211,7 @@ def run_harness(t, pairs, tmp_path, flags):
     require_cc()
     suffix = "f32" if t is F32 else "f64"
     c_file = tmp_path / f"harness_{suffix}.c"
-    c_file.write_text(helper_source(f"scribe_floordiv_{suffix}", f"scribe_mod_{suffix}") + HARNESS_MAIN[t],
+    c_file.write_text(helper_source(f"apik_floordiv_{suffix}", f"apik_mod_{suffix}") + HARNESS_MAIN[t],
                       encoding="utf-8")
     exe = tmp_path / (f"harness_{suffix}.exe" if os.name == "nt" else f"harness_{suffix}")
     build = subprocess.run([C_COMPILER, *STRICT_FLAGS, "-Werror", *flags, "-o", str(exe), str(c_file), "-lm"],
@@ -236,18 +236,18 @@ def test_helpers_are_exact(tmp_path, t):
 
 def test_helpers_need_the_maths_library():
     for suffix in ("f64", "f32"):
-        assert _HELPERS[f"scribe_floordiv_{suffix}"].libraries == ("m",)
-        assert _HELPERS[f"scribe_mod_{suffix}"].libraries == ("m",)
+        assert _HELPERS[f"apik_floordiv_{suffix}"].libraries == ("m",)
+        assert _HELPERS[f"apik_mod_{suffix}"].libraries == ("m",)
 
 
 # -- the language -----------------------------------------------------------------------
 
 @pytest.mark.parametrize("source, fragment", [
-    ("x = 7.0\ny = 2.0\nprint x // y\n", "scribe_floordiv_f64(v_x, v_y)"),
-    ("x = 7.0\ny = 2.0\nprint x % y\n", "scribe_mod_f64(v_x, v_y)"),
-    ("x = 7.0f\ny = 2.0f\nprint x // y\n", "scribe_floordiv_f32(v_x, v_y)"),
-    ("x = 7.0f\nprint x % 2\n", "scribe_mod_f32(v_x, 2.0f)"),
-    ("print 7.5 // 2\n", "scribe_floordiv_f64(7.5, 2.0)"),
+    ("x = 7.0\ny = 2.0\nprint x // y\n", "apik_floordiv_f64(v_x, v_y)"),
+    ("x = 7.0\ny = 2.0\nprint x % y\n", "apik_mod_f64(v_x, v_y)"),
+    ("x = 7.0f\ny = 2.0f\nprint x // y\n", "apik_floordiv_f32(v_x, v_y)"),
+    ("x = 7.0f\nprint x % 2\n", "apik_mod_f32(v_x, 2.0f)"),
+    ("print 7.5 // 2\n", "apik_floordiv_f64(7.5, 2.0)"),
 ])
 def test_float_floor_division_and_remainder_use_the_helpers(compiler, source, fragment):
     result = compiler.compile(source)
@@ -270,5 +270,5 @@ def test_integer_floor_division_needs_no_library(compiler):
     ("x = -7.5\ny = 0.0\nprint x // y\n", "-inf\n"),
     ("x = 2.5\ny = 0.5\nprint x // y * y + x % y == x\n", "true\n"),
 ])
-def test_float_floor_division_and_remainder(run_scribe, source, output):
-    assert run_scribe(source) == output
+def test_float_floor_division_and_remainder(run_apik, source, output):
+    assert run_apik(source) == output

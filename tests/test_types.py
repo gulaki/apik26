@@ -1,13 +1,13 @@
 """Built-in scalar types: literals, inference, mixing rules, casts and checked
 integer arithmetic (docs/design/type-system.md).
 
-The run_scribe tests build the generated C with strict flags and run it, and
+The run_apik tests build the generated C with strict flags and run it, and
 the run_trapping tests check that a runtime error stops the program with a
 located message instead of reaching undefined behaviour in C.
 """
 import pytest
 
-from scribe_lang.types import F32, F64, I64
+from apik26.types import F32, F64, I64
 
 
 def codes(compiler, source):
@@ -22,16 +22,16 @@ def codes(compiler, source):
     ("9223372036854775807", "9223372036854775807\n"),
     ("-9223372036854775808", "-9223372036854775808\n"),
 ])
-def test_integer_literals(run_scribe, literal, expected):
-    assert run_scribe(f"a = {literal}\nprint a\n") == expected
+def test_integer_literals(run_apik, literal, expected):
+    assert run_apik(f"a = {literal}\nprint a\n") == expected
 
 
 @pytest.mark.parametrize("literal, expected", [
     ("5.0", "5.00\n"), ("2.5", "2.50\n"), (".5", "0.50\n"), ("5.", "5.00\n"),
     ("1e3", "1000.00\n"), ("1_000.5", "1000.50\n"), ("2.5f", "2.50\n"), ("1e2f", "100.00\n"),
 ])
-def test_float_literals(run_scribe, literal, expected):
-    assert run_scribe(f"b = {literal}\nprint b\n") == expected
+def test_float_literals(run_apik, literal, expected):
+    assert run_apik(f"b = {literal}\nprint b\n") == expected
 
 
 def test_leading_zero_is_rejected_with_an_explanation(compiler):
@@ -61,13 +61,13 @@ def test_integer_literal_must_be_exact_in_a_float_context(compiler):
 
 # -- constant folding -----------------------------------------------------------
 
-def test_integer_floor_division_rounds_down(run_scribe):
-    assert run_scribe("print 7 // 2\nprint -7 // 2\nx = 7\nprint x // 2\ny = -7\nprint y // 2\n") == "3\n-4\n3\n-4\n"
+def test_integer_floor_division_rounds_down(run_apik):
+    assert run_apik("print 7 // 2\nprint -7 // 2\nx = 7\nprint x // 2\ny = -7\nprint y // 2\n") == "3\n-4\n3\n-4\n"
 
 
-def test_constants_are_folded_exactly(run_scribe):
+def test_constants_are_folded_exactly(run_apik):
     # The intermediate 2**64 does not fit any C integer type.
-    assert run_scribe("print 4294967296 * 4294967296 // 4294967296\n") == "4294967296\n"
+    assert run_apik("print 4294967296 * 4294967296 // 4294967296\n") == "4294967296\n"
 
 
 def test_constant_overflow(compiler):
@@ -78,8 +78,8 @@ def test_constant_division_by_zero(compiler):
     assert codes(compiler, "print 1 // 0\n") == ["E0504"]
 
 
-def test_float_division_by_zero_is_infinity(run_scribe):
-    assert run_scribe("print 1.0 / 0\n") == "inf\n"
+def test_float_division_by_zero_is_infinity(run_apik):
+    assert run_apik("print 1.0 / 0\n") == "inf\n"
 
 
 # -- inference and mixing -------------------------------------------------------
@@ -90,8 +90,8 @@ def test_a_variable_keeps_the_type_of_its_first_assignment(compiler):
     assert result.diagnostics[0].notes[0].span.line == 1
 
 
-def test_integer_constant_into_a_float_variable(run_scribe):
-    assert run_scribe("b = 1.0\nb = 3\nprint b\n") == "3.00\n"
+def test_integer_constant_into_a_float_variable(run_apik):
+    assert run_apik("b = 1.0\nb = 3\nprint b\n") == "3.00\n"
 
 
 def test_integer_variable_into_a_float_variable_needs_a_cast(compiler):
@@ -99,8 +99,8 @@ def test_integer_variable_into_a_float_variable_needs_a_cast(compiler):
     assert codes(compiler, "a = 1\nb = 1.0\nb = f64(a)\n") == []
 
 
-def test_f32_widens_to_f64(run_scribe):
-    assert run_scribe("f = 2.5f\nd = 1.0\nd = f\nprint f + d\n") == "5.00\n"
+def test_f32_widens_to_f64(run_apik):
+    assert run_apik("f = 2.5f\nd = 1.0\nd = f\nprint f + d\n") == "5.00\n"
 
 
 def test_no_common_type(compiler):
@@ -132,19 +132,19 @@ def test_input_into_a_new_variable_is_f64(compiler):
     ("42\n", "42\n"), ("-5\n", "-5\n"), ("9223372036854775807\n", "9223372036854775807\n"),
     ("9223372036854775808\n", "0\n"), ("4.5\n", "0\n"), ("abc\n", "0\n"), ("", "0\n"),
 ])
-def test_input_into_an_integer_variable(run_scribe, stdin, expected):
-    assert run_scribe("n = 0\ninput n\nprint n\n", stdin) == expected
+def test_input_into_an_integer_variable(run_apik, stdin, expected):
+    assert run_apik("n = 0\ninput n\nprint n\n", stdin) == expected
 
 
-def test_input_into_an_f32_variable(run_scribe):
-    assert run_scribe("f = 0.0f\ninput f\nprint f\n", "1.5\n") == "1.50\n"
+def test_input_into_an_f32_variable(run_apik):
+    assert run_apik("f = 0.0f\ninput f\nprint f\n", "1.5\n") == "1.50\n"
 
 
 # -- casts ----------------------------------------------------------------------
 
-def test_casts_between_integer_and_float(run_scribe):
+def test_casts_between_integer_and_float(run_apik):
     program = "a = 7\nb = 2.75\nprint f64(a) / 2\nprint i64(b)\nprint i64(-2.75)\nprint f32(a)\n"
-    assert run_scribe(program) == "3.50\n2\n-2\n7.00\n"
+    assert run_apik(program) == "3.50\n2\n-2\n7.00\n"
 
 
 def test_cast_of_integer_constant_checks_the_range(compiler):
@@ -152,12 +152,12 @@ def test_cast_of_integer_constant_checks_the_range(compiler):
     assert codes(compiler, "print f32(1e39)\n") == ["E0401"]
 
 
-def test_f64_to_f32_saturates_instead_of_undefined_behaviour(run_scribe):
+def test_f64_to_f32_saturates_instead_of_undefined_behaviour(run_apik):
     program = "d = 1.0\ninput d\nprint f32(d)\n"
-    assert run_scribe(program, "1e300\n") == "inf\n"
-    assert run_scribe(program, "-1e300\n") == "-inf\n"
+    assert run_apik(program, "1e300\n") == "inf\n"
+    assert run_apik(program, "-1e300\n") == "-inf\n"
     # Below the rounding threshold, IEEE rounding gives FLT_MAX, not infinity.
-    assert run_scribe(program, "3.4028235e38\n") == "340282346638528859811704183484516925440.00\n"
+    assert run_apik(program, "3.4028235e38\n") == "340282346638528859811704183484516925440.00\n"
 
 
 def test_type_names_are_reserved(compiler):
@@ -168,37 +168,37 @@ def test_type_names_are_reserved(compiler):
 # -- checked integer arithmetic -------------------------------------------------
 
 @pytest.mark.parametrize("program, message", [
-    ("x = 9223372036854775807\ny = x + 1\n", "t.scribe:2:7: runtime error: integer overflow\n"),
-    ("x = -9223372036854775808\ny = x - 1\n", "t.scribe:2:7: runtime error: integer overflow\n"),
-    ("x = 4294967296\ny = x * x\n", "t.scribe:2:7: runtime error: integer overflow\n"),
-    ("x = -9223372036854775808\ny = -x\n", "t.scribe:2:5: runtime error: integer overflow\n"),
-    ("x = -9223372036854775808\ny = x // -1\n", "t.scribe:2:7: runtime error: integer overflow\n"),
-    ("x = 0\ny = 1 // x\n", "t.scribe:2:7: runtime error: division by zero\n"),
-    ("d = 1.0\ninput d\nn = i64(d)\n", "t.scribe:3:5: runtime error: value out of range for i64\n"),
+    ("x = 9223372036854775807\ny = x + 1\n", "t.apik:2:7: runtime error: integer overflow\n"),
+    ("x = -9223372036854775808\ny = x - 1\n", "t.apik:2:7: runtime error: integer overflow\n"),
+    ("x = 4294967296\ny = x * x\n", "t.apik:2:7: runtime error: integer overflow\n"),
+    ("x = -9223372036854775808\ny = -x\n", "t.apik:2:5: runtime error: integer overflow\n"),
+    ("x = -9223372036854775808\ny = x // -1\n", "t.apik:2:7: runtime error: integer overflow\n"),
+    ("x = 0\ny = 1 // x\n", "t.apik:2:7: runtime error: division by zero\n"),
+    ("d = 1.0\ninput d\nn = i64(d)\n", "t.apik:3:5: runtime error: value out of range for i64\n"),
 ])
 def test_runtime_errors_trap_with_a_location(run_trapping, program, message):
     assert run_trapping(program, stdin="1e300\n") == message
 
 
-def test_i64_conversion_boundaries(run_scribe):
+def test_i64_conversion_boundaries(run_apik):
     program = "d = 1.0\ninput d\nprint i64(d)\n"
-    assert run_scribe(program, "-9223372036854775808\n") == "-9223372036854775808\n"
-    assert run_scribe(program, "9223372036854774784\n") == "9223372036854774784\n"
+    assert run_apik(program, "-9223372036854775808\n") == "-9223372036854775808\n"
+    assert run_apik(program, "9223372036854774784\n") == "9223372036854774784\n"
 
 
-def test_arithmetic_near_the_limits_does_not_trap(run_scribe):
+def test_arithmetic_near_the_limits_does_not_trap(run_apik):
     program = (
         "x = 9223372036854775806\nprint x + 1\n"
         "y = -9223372036854775807\nprint y - 1\n"
         "z = 3037000499\nprint z * z\n"
         "w = -9223372036854775808\nprint w // 1\n"
     )
-    assert run_scribe(program) == (
+    assert run_apik(program) == (
         "9223372036854775807\n-9223372036854775808\n9223372030926249001\n-9223372036854775808\n"
     )
 
 
 def test_checks_are_only_emitted_when_needed(compiler):
     source = compiler.compile("x = 1.0\nprint x + 1\n").c_source
-    assert "scribe_trap" not in source
-    assert "scribe_add_i64" not in source
+    assert "apik_trap" not in source
+    assert "apik_add_i64" not in source

@@ -12,7 +12,7 @@ def test_block_variables_are_declared_at_the_top_of_the_c_block(compiler):
         "        int64_t v_a = 0;\n"
         "        int64_t v_b = 0;\n"
         "        v_a = INT64_C(1);\n"
-        "        v_b = scribe_add_i64(v_a, INT64_C(1), 0);\n"
+        "        v_b = apik_add_i64(v_a, INT64_C(1), 0);\n"
         "    }\n"
     ) in source
 
@@ -71,7 +71,7 @@ def test_nested_blocks_indent_one_level_per_block(compiler):
     source = c_source(compiler, "x = 1\nif x > 0 {\n    while x > 0 {\n        x = x - 1\n    }\n}\n")
     assert "    if (v_x > INT64_C(0)) {\n" in source
     assert "        while (v_x > INT64_C(0)) {\n" in source
-    assert "            v_x = scribe_sub_i64(v_x, INT64_C(1), 0);\n" in source
+    assert "            v_x = apik_sub_i64(v_x, INT64_C(1), 0);\n" in source
 
 
 def test_labels_are_emitted_as_null_statements(compiler):
@@ -91,10 +91,10 @@ def test_declarations_use_each_variables_type(compiler):
 
 
 def test_runtime_checks_record_their_source_position(compiler):
-    source = compiler.compile("x = 1\ny = x * x\nz = -y\n", filename="p.scribe").c_source
-    assert '    "p.scribe:2:7",\n    "p.scribe:3:5",\n' in source
-    assert "v_y = scribe_mul_i64(v_x, v_x, 0);" in source
-    assert "v_z = scribe_neg_i64(v_y, 1);" in source
+    source = compiler.compile("x = 1\ny = x * x\nz = -y\n", filename="p.apik").c_source
+    assert '    "p.apik:2:7",\n    "p.apik:3:5",\n' in source
+    assert "v_y = apik_mul_i64(v_x, v_x, 0);" in source
+    assert "v_z = apik_neg_i64(v_y, 1);" in source
 
 
 @pytest.mark.parametrize("program, expected", [
