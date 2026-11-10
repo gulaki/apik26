@@ -1,5 +1,5 @@
 # PROPOSAL (stage M3): runtime errors propagate through the callers to the
-# program, which prints a traceback (text, or JSON with SCRIBE_TRACEBACK=json)
+# program, which prints a traceback (text, or JSON with APIK_TRACEBACK=json)
 # and exits with status 1. See docs/design/runtime-errors.md.
 
 fn mean(i64: total, i64: count) -> i64 {
@@ -35,10 +35,10 @@ try {
 
 report(10, 0)
 # Traceback (most recent call last):
-#   runtime_errors.scribe:36:1, in <program>
+#   runtime_errors.apik:36:1, in <program>
 #     report(10, 0)
-#   runtime_errors.scribe:10:11, in report
+#   runtime_errors.apik:10:11, in report
 #     print mean(total, count)
-#   runtime_errors.scribe:6:18, in mean
+#   runtime_errors.apik:6:18, in mean
 #     return total // count
-# runtime_errors.scribe:6:18: runtime error[R0002]: division by zero
+# runtime_errors.apik:6:18: runtime error[R0002]: division by zero

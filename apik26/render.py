@@ -61,7 +61,7 @@ def _summary(diagnostics: list[Diagnostic]) -> str | None:
 def render_text(diagnostics: Iterable[Diagnostic], source: str | None = None) -> str:
     """Render in the familiar compiler format:
 
-        prog.scribe:2:7: error[E0201]: use of undeclared variable 'total'
+        prog.apik:2:7: error[E0201]: use of undeclared variable 'total'
          2 | print total
            |       ^~~~~
         1 error generated.

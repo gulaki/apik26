@@ -2,7 +2,7 @@
 into a program for a browser terminal (shell `web`) or for Node (shell
 `node`).
 
-Like the native target, Scribe only writes files. With `--build make` or
+Like the native target, APIK only writes files. With `--build make` or
 `--build ninja` it also writes the build file that runs `emcc`, so building
 is `make -C folder`, and the C stays visible and auditable next to it.
 
@@ -24,13 +24,13 @@ from .compiler import CompilationResult
 _WEB = Path(__file__).resolve().parent / "web"
 _VENDOR = _WEB / "vendor"
 
-# A folder Scribe wrote has this file, so a folder it did not write (or a
+# A folder APIK wrote has this file, so a folder it did not write (or a
 # native executable with the same name) is never overwritten. It lists the
-# files Scribe wrote, so building again removes ones no longer needed.
-MARKER = ".scribe-wasm"
+# files APIK wrote, so building again removes ones no longer needed.
+MARKER = ".apik-wasm"
 _MARKER_TEXT = (
-    "This folder was written by `scribe --target wasm`. Building the program\n"
-    "again replaces the files Scribe wrote here, listed below.\n\n"
+    "This folder was written by `apik26 --target wasm`. Building the program\n"
+    "again replaces the files APIK wrote here, listed below.\n\n"
 )
 
 
@@ -47,12 +47,12 @@ class Shell:
 SHELLS = {
     # `node answer.js`; stdin, stdout and stderr are the process's own.
     "node": Shell("node", ".js", ldflags=("-sENVIRONMENT=node", "-sEXIT_RUNTIME=1")),
-    # index.html + scribe-term.js load answer.mjs into an xterm.js terminal.
-    # SCRIBE_COLOR_ERRORS shows runtime errors in red; the terminal is
+    # index.html + apik-term.js load answer.mjs into an xterm.js terminal.
+    # APIK_COLOR_ERRORS shows runtime errors in red; the terminal is
     # always a terminal, while the node shell's stderr may be a file.
     "web": Shell(
         "web", ".mjs",
-        cflags=("-DSCRIBE_COLOR_ERRORS",),
+        cflags=("-DAPIK_COLOR_ERRORS",),
         ldflags=(
             "-sENVIRONMENT=web", "-sASYNCIFY", "-sFORCE_FILESYSTEM", "-sEXIT_RUNTIME=1",
             "-sMODULARIZE", "-sEXPORT_ES6", "--js-library=emscripten-pty.js",
@@ -68,7 +68,7 @@ class WasmError(Exception):
 
 
 def default_folder(source: Path) -> Path:
-    """`examples/primes.scribe` -> `examples/primes`."""
+    """`examples/primes.apik` -> `examples/primes`."""
     return source.with_suffix("")
 
 
@@ -102,28 +102,28 @@ def write_folder(result: CompilationResult, source: Path, folder: Path, shell: s
 
 
 def _check_folder(folder: Path) -> set[str]:
-    """Refuse a folder Scribe did not write; returns the files it wrote there."""
+    """Refuse a folder APIK did not write; returns the files it wrote there."""
     if folder.exists() and not folder.is_dir():
         raise WasmError(f"{folder} is not a folder; choose another place with -o")
     if not folder.is_dir() or not any(folder.iterdir()):
         return set()
     marker = folder / MARKER
     if not marker.exists():
-        raise WasmError(f"{folder} was not written by scribe; choose another place with -o")
+        raise WasmError(f"{folder} was not written by apik26; choose another place with -o")
     listed = marker.read_text(encoding="utf-8").split("\n\n", 1)[-1].split("\n")
     # Only plain names in this folder, whatever the marker says.
     return {line for line in listed if line and "/" not in line and "\\" not in line and line != MARKER}
 
 
 def manifest() -> dict:
-    """scribe_lang/web/assets.json: the third-party files and their CDN copies."""
+    """apik26/web/assets.json: the third-party files and their CDN copies."""
     return json.loads((_WEB / "assets.json").read_text(encoding="utf-8"))
 
 
 def _web_files(name: str, web_assets: str) -> dict[str, str | bytes]:
     files: dict[str, str | bytes] = {
-        "scribe-term.js": (_WEB / "scribe-term.js").read_text(encoding="utf-8"),
-        "scribe-term.css": (_WEB / "scribe-term.css").read_text(encoding="utf-8"),
+        "apik-term.js": (_WEB / "apik-term.js").read_text(encoding="utf-8"),
+        "apik-term.css": (_WEB / "apik-term.css").read_text(encoding="utf-8"),
     }
     styles, scripts, licenses = [], [], []
     for library in manifest()["libraries"]:

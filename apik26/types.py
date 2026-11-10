@@ -1,4 +1,4 @@
-"""Scribe's built-in scalar types and the rules for mixing them.
+"""APIK's built-in scalar types and the rules for mixing them.
 
 One rule decides every implicit conversion: a value of type `src` may be used
 where `dst` is expected only if *every* value of `src` is exactly a value of

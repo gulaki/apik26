@@ -14,4 +14,4 @@ def version() -> str:
     try:
         return _VERSION_FILE.read_text(encoding="utf-8").strip()
     except OSError:  # installed from a wheel: no repository around it
-        return metadata.version("scribe-lang")
+        return metadata.version("apik26")

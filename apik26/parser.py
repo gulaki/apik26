@@ -19,7 +19,7 @@ from .errors import ParseError
 from .render import render_text
 
 
-_GRAMMAR_PATH = Path(__file__).resolve().parent / "grammar" / "scribe_lang.lark"
+_GRAMMAR_PATH = Path(__file__).resolve().parent / "grammar" / "apik26.lark"
 
 def _loc(item) -> SourceLocation:
     return SourceLocation(
@@ -591,7 +591,7 @@ _LEADING_ZERO = re.compile(r"0[0-9_]*[0-9]")
 
 def _hint_leading_zero(err: _SyntaxError) -> bool:
     # `017` matches no terminal: in C it would be octal 15, in Python it is
-    # an error, and Scribe follows Python.
+    # an error, and APIK follows Python.
     if not isinstance(err.exc, UnexpectedCharacters) or err.exc.char != "0":
         return False
     pos = err.exc.pos_in_stream

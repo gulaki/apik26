@@ -396,7 +396,7 @@ class SemanticAnalyzer:
                 self._diagnostics.error(
                     codes.ALREADY_DECLARED, declarator.location, name=declarator.name,
                     notes=((f"'{declarator.name}' was declared here", existing.location),),
-                    help=f"Scribe has no shadowing: pick another name, or assign with '{declarator.name} = ...'",
+                    help=f"APIK has no shadowing: pick another name, or assign with '{declarator.name} = ...'",
                 )
                 continue
             symbol = scope.declare(declarator.name, declarator.location, type_)

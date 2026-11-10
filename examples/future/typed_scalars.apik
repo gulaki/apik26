@@ -1,7 +1,7 @@
 # PROPOSAL: the parts of the scalar types that do not exist yet.
 # i64, f64, f32, bool, declarations, chained and multiple assignment, casts,
-# ** and and/or/not work today; see docs/language.md, examples/types.scribe and
-# examples/booleans.scribe.
+# ** and and/or/not work today; see docs/language.md, examples/types.apik and
+# examples/booleans.apik.
 
 i32: count = 10, limit          # sized integers
 u8: mask = 0xff

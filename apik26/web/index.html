@@ -6,17 +6,17 @@
 <title>{{TITLE}}</title>
 <script>
   // Before anything is drawn: the saved theme, else the system's, so the
-  // page never flashes the wrong colours. scribe-term.js keeps it updated.
+  // page never flashes the wrong colours. apik-term.js keeps it updated.
   (function () {
     var choice = null;
-    try { choice = localStorage.getItem("scribe-term-theme"); } catch (e) {}
+    try { choice = localStorage.getItem("apik-term-theme"); } catch (e) {}
     var dark = matchMedia("(prefers-color-scheme: dark)").matches;
     document.documentElement.dataset.theme =
       choice === "light" || choice === "dark" ? choice : (dark ? "dark" : "light");
   })();
 </script>
 {{STYLES}}
-<link rel="stylesheet" href="scribe-term.css">
+<link rel="stylesheet" href="apik-term.css">
 </head>
 <body data-program="{{PROGRAM}}">
 <header>
@@ -36,6 +36,6 @@
   <code>python -m http.server</code>, then open <code>http://localhost:8000</code>.
 </p>
 {{SCRIPTS}}
-<script type="module" src="scribe-term.js"></script>
+<script type="module" src="apik-term.js"></script>
 </body>
 </html>
