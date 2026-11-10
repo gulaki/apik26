@@ -1,7 +1,7 @@
-# Coverage of the compiler (scribe_lang/), lines and branches, on every pull
+# Coverage of the compiler (apik26/), lines and branches, on every pull
 # request and every push to main. It fails below fail_under in
 # pyproject.toml. On main it publishes the HTML report and the badge data
-# on GitHub Pages: https://gulaki.github.io/scribe-lang/coverage/
+# on GitHub Pages: https://gulaki.github.io/apik26/coverage/
 name: Coverage
 
 on:
@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 30
     env:
       CC: clang
-      SCRIBE_REQUIRE: cc,ubsan,make,node
+      APIK_REQUIRE: cc,ubsan,make,node
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

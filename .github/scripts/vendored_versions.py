@@ -1,5 +1,5 @@
 """Print a Markdown table of the web shell's vendored libraries
-(scribe_lang/web/assets.json) next to their latest npm releases.
+(apik26/web/assets.json) next to their latest npm releases.
 
 It reports and never fails: xterm-pty needs xterm 5, so a newer release is a
 prompt to look, not always an upgrade."""
@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-MANIFEST = Path(__file__).resolve().parents[2] / "scribe_lang" / "web" / "assets.json"
+MANIFEST = Path(__file__).resolve().parents[2] / "apik26" / "web" / "assets.json"
 
 
 def libraries() -> list[dict]:

@@ -60,7 +60,7 @@ jobs:
         run: |
           body="The weekly run failed: $RUN_URL
 
-          Run the random tests again with \`SCRIBE_RANDOM_SCALE=10 SCRIBE_RANDOM_SEED=$SEED python -m pytest\`."
+          Run the random tests again with \`APIK_RANDOM_SCALE=10 APIK_RANDOM_SEED=$SEED python -m pytest\`."
           open="$(gh issue list --label weekly-ci --state open --json number --jq '.[0].number')"
           if [ -n "$open" ]; then
             gh issue comment "$open" --body "$body"

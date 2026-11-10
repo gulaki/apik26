@@ -1,6 +1,6 @@
 # The whole test suite on every pull request and every push to main, on
 # Linux (gcc and clang), macOS, Windows (MinGW-w64 gcc) and WebAssembly
-# (Emscripten and node). Each job names in SCRIBE_REQUIRE the tools it
+# (Emscripten and node). Each job names in APIK_REQUIRE the tools it
 # installs, so a test that needs one fails instead of skipping.
 #
 # The weekly workflow calls it with `latest: true` (the newest runner images
@@ -34,8 +34,8 @@ concurrency:
 env:
   PYTHONUTF8: "1"
   # Empty except when called: the random tests keep their fixed cases.
-  SCRIBE_RANDOM_SCALE: ${{ inputs.random-scale }}
-  SCRIBE_RANDOM_SEED: ${{ inputs.random-seed }}
+  APIK_RANDOM_SCALE: ${{ inputs.random-scale }}
+  APIK_RANDOM_SEED: ${{ inputs.random-seed }}
 
 jobs:
   test:
@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The oldest Python Scribe supports.
+          # The oldest Python APIK supports.
           - name: linux-gcc
             os: ubuntu-24.04
             latest: ubuntu-latest
@@ -78,8 +78,8 @@ jobs:
             require: cc,ubsan,node
     env:
       CC: ${{ matrix.cc }}
-      SCRIBE_REQUIRE: ${{ matrix.require }}
-      SCRIBE_SANITIZE: ${{ matrix.sanitize || '0' }}
+      APIK_REQUIRE: ${{ matrix.require }}
+      APIK_SANITIZE: ${{ matrix.sanitize || '0' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -99,7 +99,7 @@ jobs:
     runs-on: ${{ inputs.latest && 'ubuntu-latest' || 'ubuntu-24.04' }}
     timeout-minutes: 30
     env:
-      SCRIBE_REQUIRE: cc,make,node,emcc
+      APIK_REQUIRE: cc,make,node,emcc
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
