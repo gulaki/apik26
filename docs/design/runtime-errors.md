@@ -36,7 +36,7 @@ same error, so they read as Python programmers expect.
 
 ## 2. Model: every runtime error propagates
 
-Today a failed check calls `scribe_trap`, which prints one line and calls
+Today a failed check calls `apik_trap`, which prints one line and calls
 `abort()`. With functions, that loses the call stack, skips any cleanup, and
 gives the exit status of a crash.
 
@@ -65,7 +65,7 @@ number of compares.
 
 ## 3. The C calling convention
 
-Every Scribe function returns `scribe_err`. The result, if there is one, is
+Every APIK function returns `apik_err`. The result, if there is one, is
 written through a last pointer parameter.
 
 ```text
@@ -73,17 +73,17 @@ fn mean(i64: total, i64: count) -> i64
 ```
 
 ```c
-typedef int32_t scribe_err;   /* 0 means success */
+typedef int32_t apik_err;   /* 0 means success */
 
-static scribe_err f_mean__i64_i64(int64_t v_total, int64_t v_count, int64_t *r_result);
+static apik_err f_mean__i64_i64(int64_t v_total, int64_t v_count, int64_t *r_result);
 ```
 
-- `scribe_err` is a plain integer, never a struct: it is returned in a
+- `apik_err` is a plain integer, never a struct: it is returned in a
   register and tested with one compare. Everything else about the error goes
   in the **error record** (section 4), so success costs nothing and no
   allocation is ever needed. That matters because a future "out of memory"
   error must still be reportable.
-- Parameters use the C type of their Scribe type (`int64_t`, `double`, ...),
+- Parameters use the C type of their APIK type (`int64_t`, `double`, ...),
   never `int` or `long`: `long` is 32 bits on Windows.
 - A function with no return type has no result parameter.
 - The result is written only on success; on failure `*r_result` is not
@@ -94,7 +94,7 @@ A call `a = mean(t, n)` becomes:
 
 ```c
 if (f_mean__i64_i64(v_t, v_n, &t_1) != 0) {
-    scribe_trace(7);           /* site 7: this call, for the traceback */
+    apik_trace(7);           /* site 7: this call, for the traceback */
     goto fail;
 }
 v_a = t_1;
@@ -108,7 +108,7 @@ The checked helpers change in the same way. They return a status and write
 their result through a pointer:
 
 ```c
-static scribe_err scribe_add_i64(int64_t a, int64_t b, int64_t *out, int site);
+static apik_err apik_add_i64(int64_t a, int64_t b, int64_t *out, int site);
 ```
 
 This means a fallible operation can no longer sit in the middle of a C
@@ -124,16 +124,16 @@ One record per program, filled when an error starts and read by `main`:
 
 ```c
 static struct {
-    scribe_err code;       /* R0001 ... */
+    apik_err code;       /* R0001 ... */
     int site;              /* where it started: file, line, column, function */
     int frames[64];        /* call sites, innermost first */
     int depth;             /* how many calls the error passed through */
-} scribe_error;
+} apik_error;
 ```
 
 - A failing check or `raise` sets `code` and `site`, sets `depth` to 0,
   and returns non-zero.
-- `scribe_trace(site)` appends the call site as the error passes through each
+- `apik_trace(site)` appends the call site as the error passes through each
   caller.
 - **Bounded.** If an error passes through more than 64 calls, the record
   keeps the innermost 32 and the outermost 32 and counts the rest, so a
@@ -144,7 +144,7 @@ static struct {
 - The record is a file-scope static, since v1 has no threads. With threads it
   becomes `_Thread_local`.
 
-The site table that runtime errors already use (`scribe_sites`) grows to hold,
+The site table that runtime errors already use (`apik_sites`) grows to hold,
 for each site, the file, line, column, enclosing function and the source
 line's text. All of these are compile-time strings, so the traceback can show
 source code without the program reading any files.
@@ -157,14 +157,14 @@ and the existing tests still find it:
 
 ```text
 Traceback (most recent call last):
-  fact.scribe:8:7, in <program>
+  fact.apik:8:7, in <program>
     print fact(25)
-  fact.scribe:5:16, in fact
+  fact.apik:5:16, in fact
     return n * fact(n - 1)
   [the line above repeats 3 more times]
-  fact.scribe:5:14, in fact
+  fact.apik:5:14, in fact
     return n * fact(n - 1)
-fact.scribe:5:14: runtime error[R0001]: integer overflow
+fact.apik:5:14: runtime error[R0001]: integer overflow
 ```
 
 Identical consecutive frames are folded, as Python does for recursion. An
@@ -174,8 +174,8 @@ programs without functions look exactly as they do today.
 **JSON, for tools and AI agents.** It is selected when the program runs,
 with no recompiling:
 
-- `SCRIBE_TRACEBACK=json` writes JSON to stderr instead of text.
-- `SCRIBE_TRACEBACK_FILE=path` also writes the JSON to that file.
+- `APIK_TRACEBACK=json` writes JSON to stderr instead of text.
+- `APIK_TRACEBACK_FILE=path` also writes the JSON to that file.
 
 The environment is read only after an error has happened. It changes how an
 error is *reported*, never what the program computes.
@@ -183,11 +183,11 @@ error is *reported*, never what the program computes.
 ```json
 {
   "error": {"code": "R0001", "name": "integer-overflow", "message": "integer overflow",
-            "file": "fact.scribe", "line": 5, "column": 14, "function": "fact"},
+            "file": "fact.apik", "line": 5, "column": 14, "function": "fact"},
   "traceback": [
-    {"file": "fact.scribe", "line": 8, "column": 7, "function": "<program>", "source": "print fact(25)"},
-    {"file": "fact.scribe", "line": 5, "column": 16, "function": "fact", "source": "return n * fact(n - 1)", "repeat": 4},
-    {"file": "fact.scribe", "line": 5, "column": 14, "function": "fact", "source": "return n * fact(n - 1)"}
+    {"file": "fact.apik", "line": 8, "column": 7, "function": "<program>", "source": "print fact(25)"},
+    {"file": "fact.apik", "line": 5, "column": 16, "function": "fact", "source": "return n * fact(n - 1)", "repeat": 4},
+    {"file": "fact.apik", "line": 5, "column": 14, "function": "fact", "source": "return n * fact(n - 1)"}
   ],
   "omitted": 0
 }
@@ -205,7 +205,7 @@ Deep recursion overflows the C stack, which C does not define (UB-catalogue
 row 17). Functions that are part of a cycle in the call graph count their
 depth on entry. Past the limit, the call fails with R0005 like any other
 runtime error, and the error comes with a traceback. The limit is 1,000
-calls by default, Python's default, and `scribe --recursion-limit N` changes
+calls by default, Python's default, and `apik26 --recursion-limit N` changes
 it. That is a resource bound, like a stack size, so a program within the
 limit behaves the same under any setting. A non-recursive function pays
 nothing. Tail calls are not optimised in v1.
@@ -270,7 +270,7 @@ Decided (2026-10-23):
 
 Proposed, not yet confirmed:
 
-- `scribe_err` is an integer, and the details live in one global record,
+- `apik_err` is an integer, and the details live in one global record,
   instead of a returned struct (section 3).
 - Exit status 1 instead of `abort()` (section 5).
 - The trace keeps 64 frames (section 4).

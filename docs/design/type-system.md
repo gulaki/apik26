@@ -198,16 +198,16 @@ are often not visible where the division is written.
   float.
 - Python agrees with `%` exactly. Its `//` is one off in rare cases with
   quotients near 2^52 and above, because it divides `x - x % y` by `y`,
-  rounding twice, and it gives `nan` for `inf // y`, where Scribe gives
+  rounding twice, and it gives `nan` for `inf // y`, where APIK gives
   `±inf`.
 - Like `/`, a zero divisor gives the IEEE 754 result instead of stopping:
   `x // 0.0` is ±inf (nan for `0.0 // 0.0`), `x % 0.0` is nan, and so is
-  `inf % y`. The C helpers `scribe_floordiv_f64` and `scribe_mod_f64` (and
+  `inf % y`. The C helpers `apik_floordiv_f64` and `apik_mod_f64` (and
   their f32 versions) handle these first, so C's `fmod` never meets the
   cases it leaves implementation-defined, and they need `-lm`.
 - Rounding down, rather than C's truncation, matches Python and gives `%` the
   sign of the divisor, which is what wrap-around and index arithmetic need.
-  The C helpers `scribe_floordiv_i64` and `scribe_mod_i64` adjust C's
+  The C helpers `apik_floordiv_i64` and `apik_mod_i64` adjust C's
   truncating `/` and `%` by one step when the remainder is nonzero and the
   signs differ.
 - Run-time checks: `//` and `%` by zero, and `INT64_MIN // -1`, stop the
@@ -275,7 +275,7 @@ and another bool. In C each of these gives 0 or 1. `input` cannot read a bool (E
 ## Runtime checks
 
 i64 `+ - * // %` and negation are checked before the operation and stop the
-program with the Scribe position on failure: overflow, division by zero and
+program with the APIK position on failure: overflow, division by zero and
 `INT64_MIN // -1`. Float arithmetic is IEEE 754: `1.0 / 0` is `inf`. ISO C
 only promises that on compilers that implement Annex F, so float division by
 zero goes through a helper that gives the IEEE result without dividing, and
@@ -289,7 +289,7 @@ never depends on compiler flags. Instead:
   also keeps such loops vectorisable;
 - *planned:* explicit wrapping operators (`+%`, `-%`, `*%`) for hashing,
   checksums and DSP code, where wrapping is what is meant;
-- failed checks go through a single `scribe_trap` function, so embedded
+- failed checks go through a single `apik_trap` function, so embedded
   targets can replace what a failure does (log and reset instead of abort).
 
 ## Powers
@@ -300,7 +300,7 @@ type.
 
 | Operands | Lowering | Failures |
 |---|---|---|
-| integers | `scribe_pow_i64`: squaring, each step through the checked multiply | overflow and a negative exponent stop the program; constants are folded exactly, and a negative constant exponent is E0512 |
+| integers | `apik_pow_i64`: squaring, each step through the checked multiply | overflow and a negative exponent stop the program; constants are folded exactly, and a negative constant exponent is E0512 |
 | `f64` | `pow` | none: C11 7.12.1 makes every case defined, and IEEE 754 compilers give inf on overflow, nan for a negative base and a fractional exponent, and inf for `0.0 ** -1.0` |
 | `f32` | `powf` | as for `f64` |
 
@@ -309,7 +309,7 @@ type.
 - `f64 ** n` with an `i64` `n` is E0502, like `f64 + n`. Converting the
   exponent silently could round an odd exponent above 2^53 to an even one and
   flip the sign of `(-1.0) ** n`.
-- `powl` is not used: `long double` is not a Scribe type and differs between
+- `powl` is not used: `long double` is not a APIK type and differs between
   targets (80 bits on x86, 64 on Apple arm64 and MSVC). `f128` will need
   `powf128` or a quad-precision library, per target.
 - Float powers of constants are not folded, like every float constant

@@ -3,7 +3,7 @@
 The compiler reports every error it can find in one run, in source order:
 
 ```text
-examples/errors/undeclared_variable.scribe:4:11: error[E0201]: use of undeclared variable 'y'
+examples/errors/undeclared_variable.apik:4:11: error[E0201]: use of undeclared variable 'y'
  4 | print x + y
    |           ^
 1 error generated.
@@ -50,7 +50,7 @@ Every code has at least one example in [`examples/errors/`](../examples/errors/)
 | E0109 | leading-zero | A decimal number that starts with `0`, such as `017`. In C that would be octal 15. Write `17`, or `0o17` for octal. |
 | E0201 | undeclared-variable | A variable is read before anything was assigned to it in a visible scope. A note shows where a variable from a block that already ended was declared. |
 | E0202 | reserved-name | A keyword such as `print` or `else` used as a variable or label name. |
-| E0203 | already-declared | A declaration such as `i64: x` names a variable that is already visible, in this block or an enclosing one. Scribe has no shadowing. A note points at the first declaration. |
+| E0203 | already-declared | A declaration such as `i64: x` names a variable that is already visible, in this block or an enclosing one. APIK has no shadowing. A note points at the first declaration. |
 | E0301 | undeclared-label | `goto` names a label that does not exist. |
 | E0302 | duplicate-label | Two labels have the same name. A note points at the first one, which stays in effect. |
 | E0303 | goto-into-block | `goto` may only jump within its own block or out to an enclosing one. A note points at the label. |
@@ -89,11 +89,11 @@ changes meaning.
 
 Some mistakes can only be detected while the program runs. The generated C
 checks for them before doing the operation, because in C each one is
-undefined behaviour. A failed check prints the Scribe position and stops the
+undefined behaviour. A failed check prints the APIK position and stops the
 program (`abort()`, so the exit status is nonzero):
 
 ```text
-prog.scribe:4:11: runtime error: integer overflow
+prog.apik:4:11: runtime error: integer overflow
 ```
 
 | Message | Cause |
@@ -118,13 +118,13 @@ A warning does not stop compilation: the C is still written. Warnings use
 
 ## Adding an error
 
-1. Register a code in `scribe_lang/diagnostics.py` (next free number in its
+1. Register a code in `apik26/diagnostics.py` (next free number in its
    group) with a message template.
 2. Report it from the phase that detects it:
    `diagnostics.error(codes.MY_ERROR, node.location, name=..., notes=..., help=...)`.
    Keep analysing afterwards, and avoid follow-on errors that only repeat the
    first one.
 3. For a syntax mistake that deserves a specific message, add a hint function
-   to `_HINTS` in `scribe_lang/parser.py`.
+   to `_HINTS` in `apik26/parser.py`.
 4. Add an `examples/errors/` file with `# expect: <code> at <line>:<column>`
    lines, and a row to the table above. Tests fail until both exist.

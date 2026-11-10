@@ -49,7 +49,7 @@ greet()
   flow shows at the call. `global` makes the exception explicit (section 2.1).
 - Functions and variables share one namespace per file, as in Python. A
   variable may not have the name of a function, or the reverse (E07xx), in
-  keeping with Scribe's no-shadowing rule.
+  keeping with APIK's no-shadowing rule.
 - Labels are local to a function, and `break`/`continue` can't leave a
   function. `goto` is deprecated (W0001) and will be removed, ideally before
   functions arrive.
@@ -159,7 +159,7 @@ which C does not define, therefore never happens. Non-recursive functions
 pay nothing.
 
 - The limit is 1,000 calls by default, Python's default, and
-  `scribe --recursion-limit N` changes it. This is a resource bound, like
+  `apik26 --recursion-limit N` changes it. This is a resource bound, like
   stack size, so it doesn't break the rule that compiler flags never change
   what a program means. A program within the limit behaves the same with any
   limit.
@@ -223,35 +223,35 @@ fn fact(i64: n) -> i64 {
 ```
 
 ```c
-static scribe_err f_fact__i64(int64_t v_n, int64_t *r_result);
+static apik_err f_fact__i64(int64_t v_n, int64_t *r_result);
 
-static scribe_err f_fact__i64(int64_t v_n, int64_t *r_result) {
+static apik_err f_fact__i64(int64_t v_n, int64_t *r_result) {
     int64_t t_1 = 0;
     int64_t t_2 = 0;
     int64_t t_3 = 0;
-    if (scribe_enter(4) != 0) {          /* recursion limit; site 4 */
+    if (apik_enter(4) != 0) {          /* recursion limit; site 4 */
         return 1;
     }
     if (v_n <= INT64_C(1)) {
         *r_result = INT64_C(1);
-        scribe_leave();
+        apik_leave();
         return 0;
     }
-    if (scribe_sub_i64(v_n, INT64_C(1), &t_1, 1) != 0) {
+    if (apik_sub_i64(v_n, INT64_C(1), &t_1, 1) != 0) {
         goto fail;
     }
     if (f_fact__i64(t_1, &t_2) != 0) {
-        scribe_trace(2);                  /* this call, for the traceback */
+        apik_trace(2);                  /* this call, for the traceback */
         goto fail;
     }
-    if (scribe_mul_i64(v_n, t_2, &t_3, 3) != 0) {
+    if (apik_mul_i64(v_n, t_2, &t_3, 3) != 0) {
         goto fail;
     }
     *r_result = t_3;
-    scribe_leave();
+    apik_leave();
     return 0;
 fail:
-    scribe_leave();
+    apik_leave();
     return 1;
 }
 ```
@@ -274,9 +274,9 @@ library design, to be written next. The plan: `use math` makes
 `math.sqrt(x)` available. Its declarations are audited bindings, scalars
 only and no pointers, which name the header and the library to link.
 Calls to them go through the header and library tracking that `**` added.
-A C function never fails in the Scribe sense, so a binding returns its
+A C function never fails in the APIK sense, so a binding returns its
 value directly. A binding that needs a check (`abs` of INT64_MIN) is
-written in Scribe instead of being bound.
+written in APIK instead of being bound.
 
 ## 10. Roadmap
 

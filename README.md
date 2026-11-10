@@ -1,18 +1,18 @@
-# Scribe
+# APIK
 
-[![Release](https://img.shields.io/github/v/release/gulaki/scribe-lang)](https://github.com/gulaki/scribe-lang/releases/latest)
-[![CI](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/scribe-lang/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgulaki.github.io%2Fscribe-lang%2Fcoverage%2Fbadge.json)](https://gulaki.github.io/scribe-lang/coverage/)
-[![CodeQL](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/scribe-lang/actions/workflows/github-code-scanning/codeql)
+[![Release](https://img.shields.io/github/v/release/gulaki/apik26)](https://github.com/gulaki/apik26/releases/latest)
+[![CI](https://github.com/gulaki/apik26/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/apik26/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgulaki.github.io%2Fapik26%2Fcoverage%2Fbadge.json)](https://gulaki.github.io/apik26/coverage/)
+[![CodeQL](https://github.com/gulaki/apik26/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/apik26/actions/workflows/github-code-scanning/codeql)
 [![Undefined behaviour: checked with UBSan](https://img.shields.io/badge/undefined_behaviour-checked_with_UBSan-brightgreen)](docs/design/ub-catalogue.md)
 [![C11: strictly conforming](https://img.shields.io/badge/C11-strictly_conforming-00599C?logo=c&logoColor=white)](docs/design/lowering.md)
 [![Platforms: Linux, macOS, Windows, WebAssembly](https://img.shields.io/badge/tested_on-Linux_%7C_macOS_%7C_Windows_%7C_WebAssembly-informational)](.github/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 
-Scribe is a small language that compiles to C. It is meant to be easy to read and
+APIK is a small language that compiles to C. It is meant to be easy to read and
 write, and hard to get wrong: **a program that compiles never reaches
 undefined behaviour in C**. Integer overflow, for example, stops the program
-with the Scribe position instead of silently wrapping. The generated C is
+with the APIK position instead of silently wrapping. The generated C is
 plain, readable and builds with `cc -std=c11 -pedantic-errors`.
 
 The compiler is written in Python with [Lark](https://github.com/lark-parser/lark).
@@ -29,21 +29,21 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e .
 
 mkdir -p build
-scribe examples/types.scribe -o build/types.c
+apik26 examples/types.apik -o build/types.c
 cc -std=c11 build/types.c -o build/types
 build/types
 ```
 
-`scribe` is the same as `python -m scribe_lang.cli`. Programs that read input
+`apik26` is the same as `python -m apik26.cli`. Programs that read input
 take it on stdin: `echo 10 | build/factorial` after building
-`examples/factorial.scribe` the same way.
+`examples/factorial.apik` the same way.
 
 The compiler can also write a build file next to the C file:
 
 ```sh
-scribe examples/factorial.scribe -o build/factorial.c --build make     # build/Makefile
+apik26 examples/factorial.apik -o build/factorial.c --build make     # build/Makefile
 make -C build
-scribe examples/factorial.scribe -o build/factorial.c --build ninja    # build/build.ninja
+apik26 examples/factorial.apik -o build/factorial.c --build ninja    # build/build.ninja
 ninja -C build
 ```
 
@@ -56,7 +56,7 @@ With [Emscripten](https://emscripten.org) installed (`brew install emscripten`,
 or emsdk), the same program runs as WebAssembly in a browser terminal:
 
 ```sh
-scribe examples/sum_avg.scribe --target wasm --build make    # writes examples/sum_avg/
+apik26 examples/sum_avg.apik --target wasm --build make    # writes examples/sum_avg/
 make -C examples/sum_avg
 cd examples/sum_avg && python -m http.server                  # open http://localhost:8000
 ```
@@ -64,20 +64,20 @@ cd examples/sum_avg && python -m http.server                  # open http://loca
 The page runs the program in [xterm.js](https://xtermjs.org) with
 [xterm-pty](https://github.com/mame/xterm-pty), so `input` reads from the
 terminal as it would natively, and runtime errors show in red. It has a
-System/Light/Dark theme switch, remembered for every Scribe app served from
+System/Light/Dark theme switch, remembered for every APIK app served from
 the same address, and a Rerun button.
 
 - `--shell node` builds for Node instead: `node examples/sum_avg/sum_avg.js`.
 - `--web-assets cdn` loads the terminal libraries from a CDN, with SRI
   hashes, instead of copying them into the folder.
 - `-o DIR` chooses the folder; by default it is next to the source, named
-  after it. Scribe refuses to write into a folder it did not create.
-- `--build ninja` works too. Without `--build`, Scribe writes only the files
+  after it. APIK refuses to write into a folder it did not create.
+- `--build ninja` works too. Without `--build`, APIK writes only the files
   it generates, as for native C.
 
 ## A tour
 
-```scribe
+```apik
 # stdin: 10
 i64: n                     # a declaration: n is an i64, starting at 0
 input n                    # reads a whole number
@@ -123,8 +123,8 @@ true
 Every error in a file is reported in one run, in the style of gcc and clang:
 
 ```text
-$ python -m scribe_lang.cli examples/errors/many_semantic_errors.scribe
-examples/errors/many_semantic_errors.scribe:9:7: error[E0201]: use of undeclared variable 'total'
+$ python -m apik26.cli examples/errors/many_semantic_errors.apik
+examples/errors/many_semantic_errors.apik:9:7: error[E0201]: use of undeclared variable 'total'
  9 | print total
    |       ^~~~~
 ...
@@ -138,18 +138,18 @@ Add `--diagnostics-format json` for machine-readable output. Codes, what they me
 ```bash
 pip install -e ".[test]"
 python -m pytest                     # everything, including compiling the docs' examples
-SCRIBE_SANITIZE=1 python -m pytest   # also build every run with UBSan
-python -m pytest --cov               # with coverage of scribe_lang/
+APIK_SANITIZE=1 python -m pytest   # also build every run with UBSan
+python -m pytest --cov               # with coverage of apik26/
 ```
 
 Tests that build C skip themselves when no C compiler is installed. Where the
 compiler has no UBSan runtime (MinGW-w64 gcc on Windows, or gcc without
 libubsan), UBSan runs in trap mode: undefined behaviour still stops the
 program, but without a report, and the test summary says so. If UBSan cannot
-be built at all, the tests that need it are skipped, and `SCRIBE_SANITIZE=1`
+be built at all, the tests that need it are skipped, and `APIK_SANITIZE=1`
 stops the run with an error.
 
-`CC` chooses the C compiler (`CC=clang python -m pytest`). `SCRIBE_REQUIRE`
+`CC` chooses the C compiler (`CC=clang python -m pytest`). `APIK_REQUIRE`
 lists tools that must be there, from `cc`, `ubsan`, `make`, `node` and
 `emcc`: a test that needs one of them fails instead of skipping.
 [CI](.github/workflows/ci.yml) runs the suite this way on every pull request
@@ -161,10 +161,10 @@ and the WebAssembly tests with Emscripten and node.
 The [coverage workflow](.github/workflows/coverage.yml) measures line and
 branch coverage of the compiler on every pull request, and fails below the
 `fail_under` level in `pyproject.toml`. On `main` it publishes the
-[report](https://gulaki.github.io/scribe-lang/coverage/) behind the badge.
+[report](https://gulaki.github.io/apik26/coverage/) behind the badge.
 
 The random tests use fixed seeds, so every run checks the same cases.
-`SCRIBE_RANDOM_SCALE=10` runs ten times as many, and `SCRIBE_RANDOM_SEED=n`
+`APIK_RANDOM_SCALE=10` runs ten times as many, and `APIK_RANDOM_SEED=n`
 picks other cases. Every Monday the [weekly workflow](.github/workflows/weekly.yml)
 runs CI on the newest runner images and Emscripten with both set (the seed is
 the run number), and opens a `weekly-ci` issue if anything fails.
@@ -212,7 +212,7 @@ the run number), and opens a `weekly-ci` issue if anything fails.
 
 ### 1. Grammar is data
 
-`scribe_lang/grammar/scribe_lang.lark` is the language syntax. You can change the grammar without editing a hand-written lexer or parser.
+`apik26/grammar/apik26.lark` is the language syntax. You can change the grammar without editing a hand-written lexer or parser.
 
 ### 2. AST is the compiler contract
 
@@ -220,7 +220,7 @@ The parser produces a stable AST. Semantic analysis and code generation consume 
 
 ### 3. Semantic analysis is separate
 
-Name, scope, label and type checks are not mixed into parsing or C generation. The analyzer builds a `Scope` for every block, gives every variable and expression a type (`scribe_lang/types.py` holds the type table and the mixing rule), and the C backend reads that model to decide where each variable is declared and which checked helper each operation needs. This keeps paying off as the language gets functions, classes or overload resolution.
+Name, scope, label and type checks are not mixed into parsing or C generation. The analyzer builds a `Scope` for every block, gives every variable and expression a type (`apik26/types.py` holds the type table and the mixing rule), and the C backend reads that model to decide where each variable is declared and which checked helper each operation needs. This keeps paying off as the language gets functions, classes or overload resolution.
 
 ### 4. Backends are replaceable
 
@@ -238,15 +238,15 @@ Phases never print or raise for mistakes in the program. They report `Diagnostic
 
 ### Add a new syntax construct
 
-1. Add its syntax to `grammar/scribe_lang.lark`.
-2. Add an AST node to `scribe_lang/ast.py`.
+1. Add its syntax to `grammar/apik26.lark`.
+2. Add an AST node to `apik26/ast.py`.
 3. Add a Transformer method in `parser.py`.
 4. Add semantic checks in `semantics.py`, reporting errors with new codes (see [`docs/errors.md`](docs/errors.md#adding-an-error)).
 5. Add code generation in the backend(s). If the C can reach undefined behaviour, add a row to [`docs/design/ub-catalogue.md`](docs/design/ub-catalogue.md) and a runtime check.
 6. Add tests, and an `examples/errors/` file for each new error code.
-7. Document it in [`docs/language.md`](docs/language.md) with `scribe` examples. `tests/test_docs.py` compiles and runs them, so the page cannot fall behind the compiler.
+7. Document it in [`docs/language.md`](docs/language.md) with `apik` examples. `tests/test_docs.py` compiles and runs them, so the page cannot fall behind the compiler.
 
-For example, the planned function syntax ([`examples/future/functions.scribe`](examples/future/functions.scribe)) is:
+For example, the planned function syntax ([`examples/future/functions.apik`](examples/future/functions.apik)) is:
 
 ```text
 fn fib(i64: n) -> i64 {

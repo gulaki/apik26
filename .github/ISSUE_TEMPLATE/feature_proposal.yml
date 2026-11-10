@@ -6,7 +6,7 @@ body:
     id: example
     attributes:
       label: Example
-      description: A Scribe program that would use it, and what it should print or report.
+      description: A APIK program that would use it, and what it should print or report.
       render: text
     validations:
       required: true
