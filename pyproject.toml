@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "scribe-lang"
+name = "apik26"
 dynamic = ["version"]
-description = "Scribe language compiler implemented with Python and Lark"
+description = "APIK language compiler implemented with Python and Lark"
 requires-python = ">=3.10"
 dependencies = ["lark>=1.1,<2"]
 
@@ -13,24 +13,24 @@ dependencies = ["lark>=1.1,<2"]
 test = ["pytest>=8", "pytest-cov>=6", "tomli>=2; python_version < '3.11'"]
 
 [project.scripts]
-scribe = "scribe_lang.cli:main"
+apik26 = "apik26.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
-include = ["scribe_lang*"]
+include = ["apik26*"]
 
 [tool.setuptools.dynamic]
 version = {file = "VERSION.txt"}
 
 [tool.setuptools.package-data]
-scribe_lang = ["grammar/*.lark", "web/*.html", "web/*.js", "web/*.css", "web/*.json", "web/vendor/*"]
+apik26 = ["grammar/*.lark", "web/*.html", "web/*.js", "web/*.css", "web/*.json", "web/vendor/*"]
 
 # Coverage of the compiler, lines and branches. The coverage workflow fails
 # below fail_under: raise it as the tests improve, never lower it.
 [tool.coverage.run]
-source = ["scribe_lang"]
+source = ["apik26"]
 branch = true
 
 [tool.coverage.report]
