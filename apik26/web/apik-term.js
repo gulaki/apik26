@@ -1,9 +1,9 @@
-// Runs a APIK program, built by Emscripten for the web shell, in an xterm.js
+// Runs an APIK26 program, built by Emscripten for the web shell, in an xterm.js
 // terminal. xterm-pty gives it a real terminal (echo, line editing, Ctrl-C,
 // Ctrl-D for end of input), and Emscripten's Asyncify lets `input` wait for a
 // line without blocking the page. Written by `apik26 --target wasm`.
 
-const THEME_KEY = "apik-term-theme"; // shared by every APIK app on this origin
+const THEME_KEY = "apik-term-theme"; // shared by every APIK26 app on this origin
 const THEMES = {
   light: {
     background: "#ffffff", foreground: "#1e1e1e", cursor: "#1e1e1e", cursorAccent: "#ffffff",
@@ -106,7 +106,7 @@ if (start !== null) {
     await start({
       pty: slave,
       onExit: (status) => finish(`program exited with status ${status}`, status !== 0),
-      // A APIK runtime error has already printed its message; abort() ends it.
+      // An APIK26 runtime error has already printed its message; abort() ends it.
       onAbort: () => finish("program stopped by a runtime error", true),
     });
   } catch {

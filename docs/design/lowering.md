@@ -16,9 +16,9 @@ Each stage is a pure function over a data structure, printable for tests. Today'
 
 All generated names are deterministic and readable.
 
-| APIK | C |
+| APIK26 | C |
 |---|---|
-| variable `x` | `v_x` (APIK has no shadowing, so never a suffix) — done |
+| variable `x` | `v_x` (APIK26 has no shadowing, so never a suffix) — done |
 | label `top` | `l_top` — done (deprecated) |
 | `break`/`continue` of an outer loop `rows` | `goto break_rows_1;` / `goto continue_rows_1;`, numbered per loop name, emitted only when jumped to — done |
 | temporaries | `t_1`, `t_2`, ... — done (multiple assignment, comparison chains), numbered per program for now; per function later |
@@ -32,7 +32,7 @@ All generated names are deterministic and readable.
 | result pointer of a function | `r_result` |
 | error exit of a function | `fail` |
 
-Prefix letters keep namespaces disjoint (a variable and a function with the same APIK name never collide). Mangling must be injective; add a test that lowers a corpus and asserts no two APIK entities share a C name. Emit `#line` so compiler errors and debuggers show APIK positions.
+Prefix letters keep namespaces disjoint (a variable and a function with the same APIK26 name never collide). Mangling must be injective; add a test that lowers a corpus and asserts no two APIK26 entities share a C name. Emit `#line` so compiler errors and debuggers show APIK26 positions.
 
 ## Runtime templates
 
@@ -57,7 +57,7 @@ User generics are instantiated in the IR: collect reachable `(function, type-arg
 
 ## Division (implemented)
 
-| APIK | C |
+| APIK26 | C |
 |---|---|
 | `x / y` (floats) | `apik_div_f64(v_x, v_y)` (`apik_div_f32` for f32): ±inf or nan for a zero divisor, without dividing by zero |
 | `x / 2.0` | `(v_x / 2.0)`: a nonzero constant divisor is plain C division |
@@ -69,7 +69,7 @@ User generics are instantiated in the IR: collect reachable `(function, type-arg
 
 ## Powers (implemented)
 
-| APIK | C |
+| APIK26 | C |
 |---|---|
 | `n ** 2` (i64) | `apik_pow_i64(v_n, INT64_C(2), site)`: traps on a negative exponent and on overflow |
 | `x ** 0.5` (f64) | `pow(v_x, 0.5)` |
@@ -97,7 +97,7 @@ lowering of fallible expressions, and the error exit are specified in
 
 ## Booleans and conditions (implemented)
 
-| APIK | C |
+| APIK26 | C |
 |---|---|
 | `bool` | `uint8_t` (`<stdint.h>`); every stored value is 0 or 1 |
 | `true`, `false` | `1`, `0`: plain constants, so `while true` is a C constant expression |
@@ -120,7 +120,7 @@ whole statements, puts its temporaries in a C block of its own instead.)
 
 ### Self-comparisons
 
-`a == a` and `a < a` are valid APIK: an integer or bool compared with
+`a == a` and `a < a` are valid APIK26: an integer or bool compared with
 itself is always true or always false, and the program prints that. gcc and
 clang warn about the C comparison (`-Wtautological-compare`), and the
 generated C is meant to build without a single warning. So the C statement
@@ -162,7 +162,7 @@ changes how it is built.
 | `--target wasm --shell node` | `emcc -sENVIRONMENT=node -sEXIT_RUNTIME=1` | `node prog.js` |
 | `--target wasm --shell web` (default shell) | `emcc -sASYNCIFY -sFORCE_FILESYSTEM -sMODULARIZE -sEXPORT_ES6 --js-library=emscripten-pty.js -DAPIK_COLOR_ERRORS` | `index.html`: xterm.js with xterm-pty |
 
-- **Blocking input in a browser.** A APIK program reads stdin in the middle
+- **Blocking input in a browser.** An APIK26 program reads stdin in the middle
   of a run. Asyncify lets the WebAssembly pause on that read without blocking
   the page, on the main thread, in every browser, served by plain
   `python -m http.server`. The alternatives were a Worker with

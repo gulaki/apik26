@@ -14,7 +14,7 @@ from .semantics import Scope, SemanticModel
 from .types import ScalarType
 
 
-# APIK names are prefixed in the generated C so that no APIK name can
+# APIK26 names are prefixed in the generated C so that no APIK26 name can
 # collide with a C keyword, a name from <stdio.h> (`printf`, `EOF`, ...),
 # `main`, or an identifier the C standard reserves (`__x`, `_X`). Variables and
 # labels get different prefixes so the C stays easy to read.
@@ -111,7 +111,7 @@ def _helper(code: str, includes=(), needs=(), libraries=()) -> _Helper:
 
 
 # Every check stops the program through apik_trap, which says where in the
-# APIK source the check failed; `apik_sites` (generated) maps the site
+# APIK26 source the check failed; `apik_sites` (generated) maps the site
 # number each call passes to a "file:line:column" position.
 #
 # The integer checks are plain ISO C comparisons done *before* the operation
@@ -642,7 +642,7 @@ class CEmitter:
     def _line(self, text: str) -> None:
         indent = " " * (self._indent * self.indent_width)
         if self._self_comparison:
-            # `a == a` is valid APIK, but gcc and clang warn that the C
+            # `a == a` is valid APIK26, but gcc and clang warn that the C
             # comparison is always true or false. Silence that warning for
             # this statement only (docs/design/lowering.md, "Self-comparisons").
             self._self_comparison = False

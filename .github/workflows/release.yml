@@ -46,5 +46,5 @@ jobs:
           fi
           python .github/scripts/changelog.py notes "$version" \
             --link-base "https://github.com/$REPO/blob/v$version/" > "$RUNNER_TEMP/notes.md"
-          gh release create "v$version" --target "$GITHUB_SHA" --title "APIK $version" \
+          gh release create "v$version" --target "$GITHUB_SHA" --title "APIK26 $version" \
             --notes-file "$RUNNER_TEMP/notes.md"

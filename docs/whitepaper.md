@@ -1,10 +1,10 @@
-# APIK: a safe, readable front end for C
+# APIK26: a safe, readable front end for C
 
 *Design whitepaper, draft 4. The language today has the scalar types i64, f64, f32 and bool, declarations, chained and multiple assignment, `/` `//` `%` `**`, `and`/`or`/`not`, comparison chains, blocks, `if`/`while`, `break`/`continue` with named loops, and the deprecated `goto`; [`language.md`](language.md) describes it. Everything else here is a design target.*
 
 ## 1. Thesis
 
-APIK is a small language whose compiler emits C. Humans and AI models write APIK because it is easy to read, easy to generate and hard to get wrong. C stays the target because it is portable, fast and everywhere. The compiler's job is to **own the hard parts of C**: undefined behaviour, memory management, name hygiene and boilerplate. Programs that compile must not exhibit undefined behaviour. This is a property of the generated C we can state, test and enforce, not a hope.
+APIK26 is a small language whose compiler emits C. Humans and AI models write APIK26 because it is easy to read, easy to generate and hard to get wrong. C stays the target because it is portable, fast and everywhere. The compiler's job is to **own the hard parts of C**: undefined behaviour, memory management, name hygiene and boilerplate. Programs that compile must not exhibit undefined behaviour. This is a property of the generated C we can state, test and enforce, not a hope.
 
 The pitch is not "a nicer C". It is **"correct C, without writing C"**: the C is an artefact you can read, ship and audit, but never have to author.
 
@@ -12,7 +12,7 @@ The pitch is not "a nicer C". It is **"correct C, without writing C"**: the C is
 
 Each point is stated, then judged: what holds, where the risks are and what we recommend. Details live in `docs/design/`.
 
-### 2.1 APIK as human/AI interface that guarantees safe C
+### 2.1 APIK26 as human/AI interface that guarantees safe C
 **Agree, and this is the right organising principle.** Two consequences:
 
 - The guarantee must be *enumerable*. We keep a catalogue of C's undefined behaviours and, for each, the mechanism that rules it out (compile-time rejection, a checked runtime operation, or a construct that cannot be expressed). See [`ub-catalogue.md`](design/ub-catalogue.md). Every new feature must update that table before it ships.
@@ -39,15 +39,15 @@ Each point is stated, then judged: what holds, where the risks are and what we r
 **Agree for the runtime library; do not expose it as the user's generics.** Two layers:
 
 1. **Runtime templates** (hand-written, audited C with type holes: arrays, strings, maps, option/result, overflow-checked arithmetic) instantiated per type. This is the *trusted base*: if it has UB, every program does. It is small, tested under sanitisers and property-tested.
-2. **User generics** (`fn f[T: Numeric]`, after structs and classes) are monomorphised in the APIK IR *before* emission, so the C emitter never sees a type variable.
+2. **User generics** (`fn f[T: Numeric]`, after structs and classes) are monomorphised in the APIK26 IR *before* emission, so the C emitter never sees a type variable.
 
 Text-level C templating (macros or string substitution) is cheap to start with but has no hygiene. We use a structured template format (placeholders for type, name and size only, checked at build time) instead of freeform macros. See [`lowering.md`](design/lowering.md).
 
 ### 2.5 Generated names, towards lowered monomorphised code
-**Agree, and started.** Variables become `v_x`, labels `l_x`, temporaries `t_1` and runtime helpers `apik_*`, so no APIK name can clash with a C keyword or libc symbol. APIK has no shadowing, so a name never needs a suffix. Extend to a scheme that is deterministic, readable and collision-free: `module__fn__sig` for functions, `Type__method`, `Array__i64__push`. Emit `#line` directives so debuggers and C diagnostics point back to APIK source. Hash suffixes only as a last resort; readable output is part of the product.
+**Agree, and started.** Variables become `v_x`, labels `l_x`, temporaries `t_1` and runtime helpers `apik_*`, so no APIK26 name can clash with a C keyword or libc symbol. APIK26 has no shadowing, so a name never needs a suffix. Extend to a scheme that is deterministic, readable and collision-free: `module__fn__sig` for functions, `Type__method`, `Array__i64__push`. Emit `#line` directives so debuggers and C diagnostics point back to APIK26 source. Hash suffixes only as a last resort; readable output is part of the product.
 
 ### 2.6 No visible pointers; RAII with escape analysis; maybe ref counting later
-**Agree on the goal. The key design decision is what replaces lifetimes.** Rust solves this with lifetime annotations; APIK should not. Recommendation, based on mutable value semantics (Hylo, Swift-style `inout`):
+**Agree on the goal. The key design decision is what replaces lifetimes.** Rust solves this with lifetime annotations; APIK26 should not. Recommendation, based on mutable value semantics (Hylo, Swift-style `inout`):
 
 - Aggregates (`struct`, `Array`, `str`) have **value semantics**: assignment is a (possibly lazy) copy or a move; no two live names alias the same mutable data.
 - Function parameters are **borrowed by default** (read-only; `mut` for exclusive write access; `take` to move ownership in). Borrows are **second-class**: they may be passed down, but not stored in a field, captured, or returned. That single rule removes dangling references with no lifetime syntax.
@@ -68,7 +68,7 @@ Open: stack depth. Unbounded recursion overflows the C stack, which is not defin
 - Precedence is Python's: `or` < `and` < `not` < comparisons.
 
 ### 2.8 Division
-**Implemented.** Python 3's split, kept strict. `/` is float division: integer constants become floats (`7 / 2` is 3.5), and an integer variable is a compile error rather than a silent conversion that would round above 2^53. `//` and `%` divide integers and round toward negative infinity, as Python's do, so `%` has the sign of the divisor. Which division runs is decided by the operator, never by operand types the reader cannot see: in C, and in APIK before this change, `f64: a = 7 / 2` quietly stored 3.0. `//` and `%` work on floats too, exactly: `x // y` is the floor of the exact quotient of the stored values, and `x % y` the exact remainder rounded once, as IEEE 754 rounds `/`. So `1 // 0.1` is 9.0, because the float 0.1 is a little more than one tenth; the naive `floor(1 / 0.1)` gives 10.0.
+**Implemented.** Python 3's split, kept strict. `/` is float division: integer constants become floats (`7 / 2` is 3.5), and an integer variable is a compile error rather than a silent conversion that would round above 2^53. `//` and `%` divide integers and round toward negative infinity, as Python's do, so `%` has the sign of the divisor. Which division runs is decided by the operator, never by operand types the reader cannot see: in C, and in APIK26 before this change, `f64: a = 7 / 2` quietly stored 3.0. `//` and `%` work on floats too, exactly: `x // y` is the floor of the exact quotient of the stored values, and `x % y` the exact remainder rounded once, as IEEE 754 rounds `/`. So `1 // 0.1` is 9.0, because the float 0.1 is a little more than one tenth; the naive `floor(1 / 0.1)` gives 10.0.
 
 ### 2.9 Powers, and only the libraries a program uses
 **Implemented.** `**` has Python's precedence. On integers it is exact and checked (exponentiation by squaring through the checked multiply), never `pow`, because a double is exact only up to 2^53. On floats it is `pow`/`powf`, whose edge cases IEEE 754 defines; they differ from Python, which raises an error or returns a complex number. This is the first feature that needs a C library, so the compiler now tracks what each program uses: headers, `<stdio.h>` included, are added only when needed, and the libraries to link (`-lm`) are reported to the build files and written at the top of the C file. The same mechanism will carry the header and library of every `extern` binding.

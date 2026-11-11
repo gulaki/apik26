@@ -1,4 +1,4 @@
-# The APIK language
+# The APIK26 language
 
 This page describes the language as it is today. Everything on it works, and
 every `apik` example is compiled and run by the test suite
@@ -149,7 +149,7 @@ print hi
 10
 ```
 
-A declaration always makes a new variable, and APIK has no shadowing, so a
+A declaration always makes a new variable, and APIK26 has no shadowing, so a
 name that is already visible cannot be declared again:
 
 ```apik-error
@@ -331,7 +331,7 @@ On floats, `//` and `%` are exact on the values the floats hold. A float
 such as `0.1` is a binary fraction, a little more than one tenth, so 1
 holds it only 9 whole times, and `1 // 0.1` is `9.0`, with remainder
 `0.09999999999999995`. Rounding `1 / 0.1` first would give `10.0`, which is
-how `floor(a / b)` goes wrong. APIK computes the exact floor of the
+how `floor(a / b)` goes wrong. APIK26 computes the exact floor of the
 quotient, and the exact remainder rounded once, as IEEE 754 does for `+`,
 `-`, `*` and `/`. Past 2^53 (2^24 for `f32`), where every float is a whole
 number, `a // b` is `a / b` rounded.
@@ -739,8 +739,8 @@ names `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `f16`, `f32`,
 
 ## How a program becomes C
 
-Each APIK variable `x` becomes the C variable `v_x`, and each label `top`
-becomes `l_top`, so no APIK name can clash with C. Program-level variables
+Each APIK26 variable `x` becomes the C variable `v_x`, and each label `top`
+becomes `l_top`, so no APIK26 name can clash with C. Program-level variables
 are zero-initialised globals. A variable from a block is declared, set to
 zero, at the top of that C block, so a `goto` can never skip its declaration.
 `break` and `continue` of the innermost loop are C's own; for an outer loop

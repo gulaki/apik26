@@ -1,12 +1,12 @@
 # Contributing
 
-APIK has no license yet, so it is not open to outside contributions. This
+APIK26 has no license yet, so it is not open to outside contributions. This
 guide is how changes are made here, by the maintainer and by AI assistants
 working with them.
 
 ## The rule
 
-APIK compiles to strictly conforming ISO C, and a program that compiles
+APIK26 compiles to strictly conforming ISO C, and a program that compiles
 must never reach undefined behaviour. Every change keeps that true, and
 keeps what already works working: [CI](.github/workflows/ci.yml) runs
 the whole test suite on Linux, macOS, Windows and WebAssembly before

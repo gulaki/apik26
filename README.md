@@ -1,4 +1,4 @@
-# APIK
+# APIK26
 
 [![Release](https://img.shields.io/github/v/release/gulaki/apik26)](https://github.com/gulaki/apik26/releases/latest)
 [![CI](https://github.com/gulaki/apik26/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/apik26/actions/workflows/ci.yml)
@@ -9,10 +9,10 @@
 [![Platforms: Linux, macOS, Windows, WebAssembly](https://img.shields.io/badge/tested_on-Linux_%7C_macOS_%7C_Windows_%7C_WebAssembly-informational)](.github/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 
-APIK is a small language that compiles to C. It is meant to be easy to read and
+APIK26 is a small language that compiles to C. It is meant to be easy to read and
 write, and hard to get wrong: **a program that compiles never reaches
 undefined behaviour in C**. Integer overflow, for example, stops the program
-with the APIK position instead of silently wrapping. The generated C is
+with the APIK26 position instead of silently wrapping. The generated C is
 plain, readable and builds with `cc -std=c11 -pedantic-errors`.
 
 The compiler is written in Python with [Lark](https://github.com/lark-parser/lark).
@@ -64,15 +64,15 @@ cd examples/sum_avg && python -m http.server                  # open http://loca
 The page runs the program in [xterm.js](https://xtermjs.org) with
 [xterm-pty](https://github.com/mame/xterm-pty), so `input` reads from the
 terminal as it would natively, and runtime errors show in red. It has a
-System/Light/Dark theme switch, remembered for every APIK app served from
+System/Light/Dark theme switch, remembered for every APIK26 app served from
 the same address, and a Rerun button.
 
 - `--shell node` builds for Node instead: `node examples/sum_avg/sum_avg.js`.
 - `--web-assets cdn` loads the terminal libraries from a CDN, with SRI
   hashes, instead of copying them into the folder.
 - `-o DIR` chooses the folder; by default it is next to the source, named
-  after it. APIK refuses to write into a folder it did not create.
-- `--build ninja` works too. Without `--build`, APIK writes only the files
+  after it. APIK26 refuses to write into a folder it did not create.
+- `--build ninja` works too. Without `--build`, APIK26 writes only the files
   it generates, as for native C.
 
 ## A tour

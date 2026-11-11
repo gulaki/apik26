@@ -49,7 +49,7 @@ greet()
   flow shows at the call. `global` makes the exception explicit (section 2.1).
 - Functions and variables share one namespace per file, as in Python. A
   variable may not have the name of a function, or the reverse (E07xx), in
-  keeping with APIK's no-shadowing rule.
+  keeping with APIK26's no-shadowing rule.
 - Labels are local to a function, and `break`/`continue` can't leave a
   function. `goto` is deprecated (W0001) and will be removed, ideally before
   functions arrive.
@@ -274,9 +274,9 @@ library design, to be written next. The plan: `use math` makes
 `math.sqrt(x)` available. Its declarations are audited bindings, scalars
 only and no pointers, which name the header and the library to link.
 Calls to them go through the header and library tracking that `**` added.
-A C function never fails in the APIK sense, so a binding returns its
+A C function never fails in the APIK26 sense, so a binding returns its
 value directly. A binding that needs a check (`abs` of INT64_MIN) is
-written in APIK instead of being bound.
+written in APIK26 instead of being bound.
 
 ## 10. Roadmap
 

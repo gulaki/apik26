@@ -188,7 +188,7 @@ def compiler() -> Compiler:
 
 @pytest.fixture
 def build_apik(compiler, tmp_path):
-    """Compile APIK source to a native binary; returns a function that runs it.
+    """Compile APIK26 source to a native binary; returns a function that runs it.
 
     The generated C is built with strict flags so that non-conforming output
     (for example a label at the end of a block) fails the test. Skipped when
@@ -222,7 +222,7 @@ def build_apik(compiler, tmp_path):
 
 @pytest.fixture
 def run_apik(build_apik):
-    """Build and run APIK source; returns its stdout. It must exit with 0."""
+    """Build and run APIK26 source; returns its stdout. It must exit with 0."""
 
     def run(source: str, stdin: str = "") -> str:
         proc = build_apik(source, extra_flags())(stdin)
@@ -234,9 +234,9 @@ def run_apik(build_apik):
 
 @pytest.fixture
 def run_trapping(build_apik):
-    """Build APIK source with UBSan and run it, expecting a runtime error.
+    """Build APIK26 source with UBSan and run it, expecting a runtime error.
 
-    Returns its stderr. A APIK runtime check must stop the program *before*
+    Returns its stderr. An APIK26 runtime check must stop the program *before*
     any undefined behaviour: if a check is missing, UBSan reports first and
     the stderr no longer matches.
     """

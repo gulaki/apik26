@@ -20,7 +20,7 @@ EXIT_INTERNAL_ERROR = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="APIK compiler powered by Lark")
+    p = argparse.ArgumentParser(description="APIK26 compiler powered by Lark")
     p.add_argument("--version", action="version", version=f"apik26 {version()}")
     p.add_argument("source", type=Path)
     p.add_argument(

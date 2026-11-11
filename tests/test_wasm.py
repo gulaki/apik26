@@ -1,6 +1,6 @@
 """The WebAssembly target (`--target wasm`): a folder of generated files that
 Emscripten builds into a program for Node (`--shell node`) or a browser
-terminal (`--shell web`). APIK only writes files; `--build make|ninja`
+terminal (`--shell web`). APIK26 only writes files; `--build make|ninja`
 adds the build file that runs emcc."""
 import pytest
 

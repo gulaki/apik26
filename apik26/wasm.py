@@ -2,7 +2,7 @@
 into a program for a browser terminal (shell `web`) or for Node (shell
 `node`).
 
-Like the native target, APIK only writes files. With `--build make` or
+Like the native target, APIK26 only writes files. With `--build make` or
 `--build ninja` it also writes the build file that runs `emcc`, so building
 is `make -C folder`, and the C stays visible and auditable next to it.
 
@@ -24,13 +24,13 @@ from .compiler import CompilationResult
 _WEB = Path(__file__).resolve().parent / "web"
 _VENDOR = _WEB / "vendor"
 
-# A folder APIK wrote has this file, so a folder it did not write (or a
+# A folder APIK26 wrote has this file, so a folder it did not write (or a
 # native executable with the same name) is never overwritten. It lists the
-# files APIK wrote, so building again removes ones no longer needed.
+# files APIK26 wrote, so building again removes ones no longer needed.
 MARKER = ".apik-wasm"
 _MARKER_TEXT = (
     "This folder was written by `apik26 --target wasm`. Building the program\n"
-    "again replaces the files APIK wrote here, listed below.\n\n"
+    "again replaces the files APIK26 wrote here, listed below.\n\n"
 )
 
 
@@ -102,7 +102,7 @@ def write_folder(result: CompilationResult, source: Path, folder: Path, shell: s
 
 
 def _check_folder(folder: Path) -> set[str]:
-    """Refuse a folder APIK did not write; returns the files it wrote there."""
+    """Refuse a folder APIK26 did not write; returns the files it wrote there."""
     if folder.exists() and not folder.is_dir():
         raise WasmError(f"{folder} is not a folder; choose another place with -o")
     if not folder.is_dir() or not any(folder.iterdir()):

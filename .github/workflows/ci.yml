@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The oldest Python APIK supports.
+          # The oldest Python APIK26 supports.
           - name: linux-gcc
             os: ubuntu-24.04
             latest: ubuntu-latest

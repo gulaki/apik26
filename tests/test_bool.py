@@ -263,10 +263,10 @@ from conftest import require_ubsan  # noqa: E402
 
 
 def python_value(text, names):
-    """Evaluate a Python version of a APIK boolean expression. Python's
+    """Evaluate a Python version of an APIK26 boolean expression. Python's
     `not`, comparison chains and integer truth have the same truth values;
     its `and`/`or` return an operand, so the Python text wraps them in
-    bool(...) to match APIK, where they give a bool."""
+    bool(...) to match APIK26, where they give a bool."""
     return "true" if eval(text, {"true": True, "false": False}, dict(names)) else "false"
 
 
@@ -288,7 +288,7 @@ def distinct_int_exprs(rng, count):
 
 def random_bool_expr(rng, depth, top=False):
     """A random well-typed bool expression (or, unless `top`, an integer
-    used as a truth value), as (APIK text, Python text)."""
+    used as a truth value), as (APIK26 text, Python text)."""
     leaves = ["p", "q", "true", "false"] + ([] if top else ["a", "b", "c"])
     kind = "leaf" if depth == 0 else rng.choice(["leaf", "not", "and", "or", "compare", "chain", "equal-bools"])
     if kind == "leaf":
@@ -301,7 +301,7 @@ def random_bool_expr(rng, depth, top=False):
         (s1, p1), (s2, p2) = random_bool_expr(rng, depth - 1), random_bool_expr(rng, depth - 1)
         return f"({s1}) {kind} ({s2})", f"bool(({p1}) {kind} ({p2}))"
     # Neighbouring operands always differ: comparing a value with itself
-    # (`a == a`) is legal APIK, but clang warns about it (-Wtautological-
+    # (`a == a`) is legal APIK26, but clang warns about it (-Wtautological-
     # compare), and this test builds with -Werror.
     if kind == "compare":
         op = rng.choice(["<", "<=", ">", ">=", "==", "!="])

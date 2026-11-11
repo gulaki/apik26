@@ -50,7 +50,7 @@ Every code has at least one example in [`examples/errors/`](../examples/errors/)
 | E0109 | leading-zero | A decimal number that starts with `0`, such as `017`. In C that would be octal 15. Write `17`, or `0o17` for octal. |
 | E0201 | undeclared-variable | A variable is read before anything was assigned to it in a visible scope. A note shows where a variable from a block that already ended was declared. |
 | E0202 | reserved-name | A keyword such as `print` or `else` used as a variable or label name. |
-| E0203 | already-declared | A declaration such as `i64: x` names a variable that is already visible, in this block or an enclosing one. APIK has no shadowing. A note points at the first declaration. |
+| E0203 | already-declared | A declaration such as `i64: x` names a variable that is already visible, in this block or an enclosing one. APIK26 has no shadowing. A note points at the first declaration. |
 | E0301 | undeclared-label | `goto` names a label that does not exist. |
 | E0302 | duplicate-label | Two labels have the same name. A note points at the first one, which stays in effect. |
 | E0303 | goto-into-block | `goto` may only jump within its own block or out to an enclosing one. A note points at the label. |
@@ -89,7 +89,7 @@ changes meaning.
 
 Some mistakes can only be detected while the program runs. The generated C
 checks for them before doing the operation, because in C each one is
-undefined behaviour. A failed check prints the APIK position and stops the
+undefined behaviour. A failed check prints the APIK26 position and stops the
 program (`abort()`, so the exit status is nonzero):
 
 ```text

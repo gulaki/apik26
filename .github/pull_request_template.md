@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- The task, the problem it solves, and what changes for a APIK program. -->
+<!-- The task, the problem it solves, and what changes for an APIK26 program. -->
 
 ## Checklist
 

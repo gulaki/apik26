@@ -65,7 +65,7 @@ number of compares.
 
 ## 3. The C calling convention
 
-Every APIK function returns `apik_err`. The result, if there is one, is
+Every APIK26 function returns `apik_err`. The result, if there is one, is
 written through a last pointer parameter.
 
 ```text
@@ -83,7 +83,7 @@ static apik_err f_mean__i64_i64(int64_t v_total, int64_t v_count, int64_t *r_res
   in the **error record** (section 4), so success costs nothing and no
   allocation is ever needed. That matters because a future "out of memory"
   error must still be reportable.
-- Parameters use the C type of their APIK type (`int64_t`, `double`, ...),
+- Parameters use the C type of their APIK26 type (`int64_t`, `double`, ...),
   never `int` or `long`: `long` is 32 bits on Windows.
 - A function with no return type has no result parameter.
 - The result is written only on success; on failure `*r_result` is not

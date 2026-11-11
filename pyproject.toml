@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "apik26"
 dynamic = ["version"]
-description = "APIK language compiler implemented with Python and Lark"
+description = "APIK26 language compiler implemented with Python and Lark"
 requires-python = ">=3.10"
 dependencies = ["lark>=1.1,<2"]
 

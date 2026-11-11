@@ -19,7 +19,7 @@ def c_source(compiler, source):
 
 # -- Bug 1: number literals were emitted as C `int` literals ----------------
 # `7` was emitted as the C int `7`, so arithmetic on literals used C `int`
-# rules and could overflow, which is undefined. Literals now get a APIK type
+# rules and could overflow, which is undefined. Literals now get an APIK26 type
 # (i64 or f64, see docs/design/type-system.md) and integer constant
 # expressions are folded exactly, so C never does arithmetic on a bare literal.
 
@@ -121,7 +121,7 @@ def test_escaped_backslash_followed_by_n_is_not_a_newline(run_apik):
     assert run_apik('print "a\\\\nb"\n') == "a\\nb\n"
 
 
-# -- Bug 5: APIK names collided with C keywords and <stdio.h> names -------
+# -- Bug 5: APIK26 names collided with C keywords and <stdio.h> names -------
 # Names were emitted verbatim, so `int = 1` declared `float int;`.
 
 @pytest.mark.parametrize("name", [
@@ -227,7 +227,7 @@ READ_AND_PRINT = "input a\ninput b\nprint a\nprint b\n"
     ("  7   \n\n 8\n", "7.00\n8.00\n"),               # any whitespace separates tokens
     ("1e999\n3\n", "0.00\n3.00\n"),                     # out of range: was undefined
     ("-1e999\n3\n", "0.00\n3.00\n"),
-    ("nan\n3\n", "0.00\n3.00\n"),                       # non-finite is not a APIK number
+    ("nan\n3\n", "0.00\n3.00\n"),                       # non-finite is not an APIK26 number
     ("inf\n3\n", "0.00\n3.00\n"),
     ("abc\n4\n", "0.00\n4.00\n"),                       # bad token consumed, next one read
     ("12abc\n4\n", "0.00\n4.00\n"),                     # trailing junk rejects the whole token

@@ -1,5 +1,5 @@
 """Comparing an integer or bool with itself (`a == a`, `a < a`) is valid
-APIK, but gcc and clang warn that the C comparison is always true or
+APIK26, but gcc and clang warn that the C comparison is always true or
 false (-Wtautological-compare). The generated C must build without
 warnings, so the statement that holds such a comparison, and only that one,
 is wrapped in `#pragma GCC diagnostic` lines (docs/design/lowering.md,

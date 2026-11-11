@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to APIK: the language, the `apik26` command and the C
+All notable changes to APIK26: the language, the `apik26` command and the C
 it generates. The language as it is now is described in
 [`docs/language.md`](docs/language.md). The current version is in
 [`VERSION.txt`](VERSION.txt).
@@ -29,8 +29,8 @@ numbers.
 
 ### Changed
 
-- The language is renamed **APIK26** (APIK in the docs), a codename until it
-  has a permanent name. Everything that carried the old name Scribe changes:
+- The language is renamed **APIK26**, a codename until it has a permanent
+  name. Everything that carried the old name Scribe changes:
   - the command is `apik26` (was `scribe`), and `apik26 --version` prints
     `apik26 X.Y.Z`;
   - the Python package and the pip distribution are `apik26` (was
