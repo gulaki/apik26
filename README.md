@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/github/v/release/gulaki/apik26)](https://github.com/gulaki/apik26/releases/latest)
 [![CI](https://github.com/gulaki/apik26/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gulaki/apik26/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgulaki.github.io%2Fapik26%2Fcoverage%2Fbadge.json)](https://gulaki.github.io/apik26/coverage/)
-[![CodeQL](https://github.com/gulaki/apik26/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gulaki/apik26/actions/workflows/github-code-scanning/codeql)
+[![CodeQL](https://github.com/gulaki/apik26/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/gulaki/apik26/actions/workflows/codeql.yml)
 [![Undefined behaviour: checked with UBSan](https://img.shields.io/badge/undefined_behaviour-checked_with_UBSan-brightgreen)](docs/design/ub-catalogue.md)
 [![C11: strictly conforming](https://img.shields.io/badge/C11-strictly_conforming-00599C?logo=c&logoColor=white)](docs/design/lowering.md)
 [![Platforms: Linux, macOS, Windows, WebAssembly](https://img.shields.io/badge/tested_on-Linux_%7C_macOS_%7C_Windows_%7C_WebAssembly-informational)](.github/workflows/ci.yml)
@@ -162,6 +162,12 @@ The [coverage workflow](.github/workflows/coverage.yml) measures line and
 branch coverage of the compiler on every pull request, and fails below the
 `fail_under` level in `pyproject.toml`. On `main` it publishes the
 [report](https://gulaki.github.io/apik26/coverage/) behind the badge.
+
+The [CodeQL workflow](.github/workflows/codeql.yml) scans the workflows,
+the compiler and the web shell on the same events and weekly. Its
+[config](.github/codeql/codeql-config.yml) skips
+`apik26/web/vendor/emscripten-pty.js`, an Emscripten JS library whose
+`#if` lines emcc preprocesses before reading it as JavaScript.
 
 The random tests use fixed seeds, so every run checks the same cases.
 `APIK_RANDOM_SCALE=10` runs ten times as many, and `APIK_RANDOM_SEED=n`

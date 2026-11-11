@@ -1,0 +1,6 @@
+name: APIK26 CodeQL
+
+paths-ignore:
+  # xterm-pty's Emscripten JS library: emcc preprocesses its `#if` lines
+  # before reading it as JavaScript, so CodeQL cannot parse it.
+  - apik26/web/vendor/emscripten-pty.js
