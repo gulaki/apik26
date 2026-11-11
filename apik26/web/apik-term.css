@@ -1,5 +1,5 @@
 /* Page around the terminal. The terminal's own colours are set by
-   scribe-term.js; these follow the same light/dark choice. */
+   apik-term.js; these follow the same light/dark choice. */
 :root[data-theme="light"] {
   --page: #f3f3f3;
   --bar: #e4e4e4;

@@ -2,7 +2,7 @@
 libraries a program needs only when it uses them."""
 import pytest
 
-from scribe_lang.build import BUILD_SYSTEMS, BuildConfig
+from apik26.build import BUILD_SYSTEMS, BuildConfig
 
 
 # -- includes and libraries on demand -------------------------------------------------
@@ -41,24 +41,24 @@ def test_build_files_without_libraries(tmp_path, system, line):
 
 # -- syntax and types --------------------------------------------------------------
 
-from scribe_lang.ast import Binary, Grouped, IntLit, Unary  # noqa: E402
-from scribe_lang.diagnostics import Diagnostics  # noqa: E402
-from scribe_lang.parser import Parser  # noqa: E402
-from scribe_lang.semantics import SemanticAnalyzer  # noqa: E402
-from scribe_lang.types import F32, F64, I64  # noqa: E402
+from apik26.ast import Binary, Grouped, IntLit, Unary  # noqa: E402
+from apik26.diagnostics import Diagnostics  # noqa: E402
+from apik26.parser import Parser  # noqa: E402
+from apik26.semantics import SemanticAnalyzer  # noqa: E402
+from apik26.types import F32, F64, I64  # noqa: E402
 
 PARSER = Parser()
 
 
 def parse_expr(text):
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(f"print {text}\n", diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     return program.statements[0].value
 
 
 def analyze(source):
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(source, diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     model = SemanticAnalyzer().analyze(program, diagnostics)
@@ -93,8 +93,8 @@ def test_a_parenthesised_base_is_the_base():
 
 @pytest.mark.parametrize("source", ["-2 ** 2", "2 ** 3 ** 2", "(-2) ** 2", "2 ** 0", "0 ** 0", "(-1) ** 99",
                                     "(-2) ** 63", "2 ** 62 + (2 ** 62 - 1)", "3 * 2 ** 3 // 4", "-(3 ** 3)"])
-def test_constants_fold_like_python(run_scribe, source):
-    assert run_scribe(f"print {source}\n") == f"{eval(source)}\n"
+def test_constants_fold_like_python(run_apik, source):
+    assert run_apik(f"print {source}\n") == f"{eval(source)}\n"
 
 
 def test_constant_power_too_large_for_i64():
@@ -151,7 +151,7 @@ INT64_MIN, INT64_MAX = -2**63, 2**63 - 1
     ("x = 2.5f\nprint x ** 0.5\n", "powf(v_x, 0.5f)"),
     ("x = 2.5f\ny = 2.0\nprint x ** y\n", "pow((double)v_x, v_y)"),
     ("print 2 ** 0.5\n", "pow(2.0, 0.5)"),
-    ("n = 3\nprint n ** 2\n", "scribe_pow_i64(v_n, INT64_C(2), 0)"),
+    ("n = 3\nprint n ** 2\n", "apik_pow_i64(v_n, INT64_C(2), 0)"),
 ])
 def test_power_lowering(compiler, source, fragment):
     assert fragment in compiler.compile(source).c_source
@@ -179,11 +179,11 @@ def test_integer_powers_need_no_library(compiler):
     ("x = -2.0\nprint x ** 3\n", "-8.00\n"),
     ("print 2 ** 0.5 * 2 ** 0.5\n", "2.00\n"),
 ])
-def test_float_powers(run_scribe, source, output):
-    assert run_scribe(source) == output
+def test_float_powers(run_apik, source, output):
+    assert run_apik(source) == output
 
 
-def test_integer_powers_match_python(run_scribe):
+def test_integer_powers_match_python(run_apik):
     bases = [-3, -2, -1, 0, 1, 2, 3, 7, 10]
     lines, expected = ["i64: b, e"], []
     for b in bases:
@@ -193,14 +193,14 @@ def test_integer_powers_match_python(run_scribe):
                 expected.append(str(b ** e))
     lines += ["b, e = -2, 63", "print b ** e", "b, e = 2, 62", "print b ** e", "b, e = -1, 9223372036854775807", "print b ** e"]
     expected += [str(INT64_MIN), str(2**62), "-1"]
-    assert run_scribe("\n".join(lines) + "\n").split() == expected
+    assert run_apik("\n".join(lines) + "\n").split() == expected
 
 
 @pytest.mark.parametrize("program, message", [
-    ("b, e = 2, 63\nprint b ** e\n", "t.scribe:2:9: runtime error: integer overflow\n"),
-    ("b, e = 3037000500, 2\nprint b ** e\n", "t.scribe:2:9: runtime error: integer overflow\n"),
-    ("b, e = 2, -1\nprint b ** e\n", "t.scribe:2:9: runtime error: negative exponent\n"),
-    ("b, e = 1, -1\nprint b ** e\n", "t.scribe:2:9: runtime error: negative exponent\n"),
+    ("b, e = 2, 63\nprint b ** e\n", "t.apik:2:9: runtime error: integer overflow\n"),
+    ("b, e = 3037000500, 2\nprint b ** e\n", "t.apik:2:9: runtime error: integer overflow\n"),
+    ("b, e = 2, -1\nprint b ** e\n", "t.apik:2:9: runtime error: negative exponent\n"),
+    ("b, e = 1, -1\nprint b ** e\n", "t.apik:2:9: runtime error: negative exponent\n"),
 ])
 def test_integer_power_runtime_errors(run_trapping, program, message):
     assert run_trapping(program) == message
@@ -231,7 +231,7 @@ def _random_power_cases(seed, count):
     return cases
 
 
-def test_random_integer_powers_match_python(build_scribe):
+def test_random_integer_powers_match_python(build_apik):
     from conftest import random_count, require_ubsan
 
     fits = [(b, e, v) for b, e, v in _random_power_cases(20261023, random_count(400))
@@ -239,14 +239,14 @@ def test_random_integer_powers_match_python(build_scribe):
     lines = ["i64: b, e"]
     for b, e, _ in fits:
         lines += [f"b, e = {b}, {e}", "print b ** e"]
-    proc = build_scribe("\n".join(lines) + "\n", [*require_ubsan(), "-Werror"])("")
+    proc = build_apik("\n".join(lines) + "\n", [*require_ubsan(), "-Werror"])("")
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.split() == [str(v) for _, _, v in fits]
 
 
 @pytest.mark.parametrize("base, exponent", [(b, e) for b, e, v in _random_power_cases(7, 200) if not INT64_MIN <= v <= INT64_MAX][:12])
 def test_random_integer_power_overflow_stops_the_program(run_trapping, base, exponent):
-    assert run_trapping(f"b, e = {base}, {exponent}\nprint b ** e\n") == "t.scribe:2:9: runtime error: integer overflow\n"
+    assert run_trapping(f"b, e = {base}, {exponent}\nprint b ** e\n") == "t.apik:2:9: runtime error: integer overflow\n"
 
 
 @pytest.mark.parametrize("source, output", [
@@ -256,13 +256,13 @@ def test_random_integer_power_overflow_stops_the_program(run_trapping, base, exp
     ("x = -1.0\nprint x ** 1000001\n", "-1.00\n"),
     ("x = 4.0\nprint x ** 0.5 ** 2\n", "1.41\n"),     # 4 ** 0.25
 ])
-def test_more_float_powers(run_scribe, source, output):
-    assert run_scribe(source) == output
+def test_more_float_powers(run_apik, source, output):
+    assert run_apik(source) == output
 
 
-def test_power_in_conditions_and_chains(run_scribe):
+def test_power_in_conditions_and_chains(run_apik):
     source = "n = 3\nif 2 ** n == 8 and 1 < n ** 2 < 10 {\n    print \"yes\"\n}\n"
-    assert run_scribe(source) == "yes\n"
+    assert run_apik(source) == "yes\n"
 
 
 def test_guarded_power_never_runs(run_trapping_or_output):

@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from scribe_lang.build import BUILD_SYSTEMS, BuildConfig
+from apik26.build import BUILD_SYSTEMS, BuildConfig
 
 EMCC = BuildConfig(
     compiler="emcc",

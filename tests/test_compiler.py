@@ -1,4 +1,4 @@
-from scribe_lang.compiler import Compiler
+from apik26.compiler import Compiler
 
 
 COMPILER = Compiler()
@@ -21,7 +21,7 @@ while nums > 0 {
     result = COMPILER.compile(source)
     assert "#include <stdio.h>" in result.c_source
     assert "while (v_nums > 0.0)" in result.c_source
-    assert "v_c = scribe_add_i64(v_a, v_b, 0);" in result.c_source
+    assert "v_c = apik_add_i64(v_a, v_b, 0);" in result.c_source
 
 
 def test_nested_if_and_while():
@@ -88,12 +88,12 @@ def test_identifiers_that_start_with_a_keyword_are_plain_identifiers():
 # -- the compilation result ---------------------------------------------------
 
 def test_successful_result_has_every_stage_and_no_diagnostics():
-    result = COMPILER.compile("x = 1\nprint x\n", "ok.scribe")
+    result = COMPILER.compile("x = 1\nprint x\n", "ok.apik")
     assert result.ok
     assert result.diagnostics == () and result.errors == []
     assert result.ast is not None and result.semantic_model is not None
     assert "int main(void)" in result.c_source
-    assert result.filename == "ok.scribe"
+    assert result.filename == "ok.apik"
     assert result.render() == ""
 
 
@@ -122,8 +122,8 @@ def test_diagnostics_are_in_source_order():
 def test_render_text_and_json():
     import json
 
-    result = COMPILER.compile("print a\n", "p.scribe")
-    assert result.render().startswith("p.scribe:1:7: error[E0201]: use of undeclared variable 'a'\n 1 | print a\n")
+    result = COMPILER.compile("print a\n", "p.apik")
+    assert result.render().startswith("p.apik:1:7: error[E0201]: use of undeclared variable 'a'\n 1 | print a\n")
     assert json.loads(result.render("json"))[0]["code"] == "E0201"
 
 

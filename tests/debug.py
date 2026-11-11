@@ -1,6 +1,6 @@
 import os
-from scribe_lang.parser import Parser
-from scribe_lang.compiler import Compiler
+from apik26.parser import Parser
+from apik26.compiler import Compiler
 
 from lark import Tree, Token
 
@@ -43,7 +43,7 @@ examples = ['factorial', 'fibonacci', 'loop_goto', 'sum_avg']
 
 ch = examples[1]
 
-with open(os.path.join(_path, '..', 'examples', '.'.join([ch, 'scribe']))) as f:
+with open(os.path.join(_path, '..', 'examples', '.'.join([ch, 'apik']))) as f:
     source = f.read()
 print(source)
 

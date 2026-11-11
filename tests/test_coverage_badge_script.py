@@ -48,5 +48,5 @@ def test_the_threshold_is_a_whole_number():
     except ImportError:
         import tomli as tomllib
     config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["coverage"]
-    assert config["run"]["source"] == ["scribe_lang"] and config["run"]["branch"] is True
+    assert config["run"]["source"] == ["apik26"] and config["run"]["branch"] is True
     assert isinstance(config["report"]["fail_under"], int)

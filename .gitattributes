@@ -1,4 +1,4 @@
 # The vendored web files must stay byte for byte as published: the page
 # loads them with SRI hashes, which tests/test_wasm.py checks. Without this,
 # git on Windows rewrites their line endings on checkout.
-scribe_lang/web/vendor/** -text
+apik26/web/vendor/** -text

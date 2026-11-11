@@ -2,17 +2,17 @@
 chains (docs/language.md, "Booleans")."""
 import pytest
 
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.parser import Parser
-from scribe_lang.semantics import SemanticAnalyzer
-from scribe_lang.types import BOOL, F64, I64
+from apik26.diagnostics import Diagnostics
+from apik26.parser import Parser
+from apik26.semantics import SemanticAnalyzer
+from apik26.types import BOOL, F64, I64
 
 PARSER = Parser()
 
 
 def analyze(source):
     """Parse and type-check only (no C), as (diagnostics, model)."""
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(source, diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     model = SemanticAnalyzer().analyze(program, diagnostics)
@@ -182,8 +182,8 @@ def test_bool_needs_stdint(compiler):
 def test_chain_middle_is_evaluated_once_through_a_temporary(compiler):
     source = c_source(compiler, "a, b, c = 1, 2, 3\nx = a < b + 1 < c\n")
     assert "int64_t t_1 = 0;" in source
-    assert "v_x = ((v_a < (t_1 = scribe_add_i64(v_b, INT64_C(1), 0))) && (t_1 < v_c));" in source
-    assert source.count("scribe_add_i64(v_b") == 1
+    assert "v_x = ((v_a < (t_1 = apik_add_i64(v_b, INT64_C(1), 0))) && (t_1 < v_c));" in source
+    assert source.count("apik_add_i64(v_b") == 1
 
 
 def test_temporaries_are_declared_at_the_top_of_their_block(compiler):
@@ -201,20 +201,20 @@ def test_conditions_have_no_doubled_parentheses(compiler):
 
 # -- behaviour -----------------------------------------------------------------
 
-def test_print_shows_true_and_false(run_scribe):
-    assert run_scribe("print true\nprint false\nprint 1 < 2\nprint not 1\nbool: f\nprint f\n") == (
+def test_print_shows_true_and_false(run_apik):
+    assert run_apik("print true\nprint false\nprint 1 < 2\nprint not 1\nbool: f\nprint f\n") == (
         "true\nfalse\ntrue\nfalse\nfalse\n"
     )
 
 
-def test_integer_conditions(run_scribe):
+def test_integer_conditions(run_apik):
     program = 'n = 3\nwhile n {\n    print n\n    n = n - 1\n}\nif not n {\n    print "done"\n}\n'
-    assert run_scribe(program) == "3\n2\n1\ndone\n"
+    assert run_apik(program) == "3\n2\n1\ndone\n"
 
 
-def test_casts_between_bool_and_numbers(run_scribe):
+def test_casts_between_bool_and_numbers(run_apik):
     program = "n = -7\nprint bool(n)\nprint bool(0)\nprint i64(true) + i64(false)\nprint f64(true)\n"
-    assert run_scribe(program) == "true\nfalse\n1\n1.00\n"
+    assert run_apik(program) == "true\nfalse\n1\n1.00\n"
 
 
 @pytest.mark.parametrize("program, expected", [
@@ -232,10 +232,10 @@ def test_short_circuit_skips_the_rest(run_trapping_or_output, program, expected)
 
 
 def test_needed_right_side_is_still_evaluated(run_trapping):
-    assert run_trapping("n = 0\nprint n == 0 and 10 // n > 1\n") == "t.scribe:2:21: runtime error: division by zero\n"
+    assert run_trapping("n = 0\nprint n == 0 and 10 // n > 1\n") == "t.apik:2:21: runtime error: division by zero\n"
 
 
-def test_truth_table_matches_a_python_reference(run_scribe):
+def test_truth_table_matches_a_python_reference(run_apik):
     # Every allowed form, over a grid of integer values. Python's own `and`,
     # `or`, `not` and chained comparisons have the same truth values.
     expressions = [
@@ -252,7 +252,7 @@ def test_truth_table_matches_a_python_reference(run_scribe):
             for text in expressions:
                 lines.append(f"print {text}")
                 expected.append("true" if eval(text, {}, {"a": a, "b": b}) else "false")
-    assert run_scribe("\n".join(lines) + "\n").splitlines() == expected
+    assert run_apik("\n".join(lines) + "\n").splitlines() == expected
 
 
 # -- hardening -------------------------------------------------------------------
@@ -263,10 +263,10 @@ from conftest import require_ubsan  # noqa: E402
 
 
 def python_value(text, names):
-    """Evaluate a Python version of a Scribe boolean expression. Python's
+    """Evaluate a Python version of an APIK26 boolean expression. Python's
     `not`, comparison chains and integer truth have the same truth values;
     its `and`/`or` return an operand, so the Python text wraps them in
-    bool(...) to match Scribe, where they give a bool."""
+    bool(...) to match APIK26, where they give a bool."""
     return "true" if eval(text, {"true": True, "false": False}, dict(names)) else "false"
 
 
@@ -288,20 +288,20 @@ def distinct_int_exprs(rng, count):
 
 def random_bool_expr(rng, depth, top=False):
     """A random well-typed bool expression (or, unless `top`, an integer
-    used as a truth value), as (Scribe text, Python text)."""
+    used as a truth value), as (APIK26 text, Python text)."""
     leaves = ["p", "q", "true", "false"] + ([] if top else ["a", "b", "c"])
     kind = "leaf" if depth == 0 else rng.choice(["leaf", "not", "and", "or", "compare", "chain", "equal-bools"])
     if kind == "leaf":
         leaf = rng.choice(leaves)
         return leaf, leaf
     if kind == "not":
-        scribe, python = random_bool_expr(rng, depth - 1)
-        return f"not ({scribe})", f"not ({python})"
+        apik, python = random_bool_expr(rng, depth - 1)
+        return f"not ({apik})", f"not ({python})"
     if kind in ("and", "or"):
         (s1, p1), (s2, p2) = random_bool_expr(rng, depth - 1), random_bool_expr(rng, depth - 1)
         return f"({s1}) {kind} ({s2})", f"bool(({p1}) {kind} ({p2}))"
     # Neighbouring operands always differ: comparing a value with itself
-    # (`a == a`) is legal Scribe, but clang warns about it (-Wtautological-
+    # (`a == a`) is legal APIK26, but clang warns about it (-Wtautological-
     # compare), and this test builds with -Werror.
     if kind == "compare":
         op = rng.choice(["<", "<=", ">", ">=", "==", "!="])
@@ -318,7 +318,7 @@ def random_bool_expr(rng, depth, top=False):
     return f"({s1}) == ({s2})", f"({p1}) == ({p2})"
 
 
-def test_random_boolean_expressions_match_python(build_scribe):
+def test_random_boolean_expressions_match_python(build_apik):
     from conftest import random_count, random_seed
 
     rng = random.Random(random_seed(20261022))  # fixed seed: the same cases every run
@@ -330,27 +330,27 @@ def test_random_boolean_expressions_match_python(build_scribe):
         flags = ", ".join("true" if names[k] else "false" for k in "pq")
         lines.append(f"a, b, c = {names['a']}, {names['b']}, {names['c']}")
         lines.append(f"p, q = {flags}")
-        for scribe, python in expressions:
-            lines.append(f"print {scribe}")
+        for apik, python in expressions:
+            lines.append(f"print {apik}")
             expected.append(python_value(python, names))
     # -Werror: the generated C must not draw a single warning; UBSan: no UB.
-    proc = build_scribe("\n".join(lines) + "\n", ["-Werror", *require_ubsan()])("")
+    proc = build_apik("\n".join(lines) + "\n", ["-Werror", *require_ubsan()])("")
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.splitlines() == expected
 
 
-def test_deep_nesting_compiles_cleanly_and_runs(build_scribe):
+def test_deep_nesting_compiles_cleanly_and_runs(build_apik):
     nots = "not " * 40 + "a"
     ands = "a"
     for i in range(30):
         ands = f"(b or ({ands} and c))" if i % 2 else f"({ands} and not b)"
     source = f"a, b, c = 1, 0, 2\nprint {nots}\nprint {ands}\n"
-    proc = build_scribe(source, ["-Werror", *require_ubsan()])("")
+    proc = build_apik(source, ["-Werror", *require_ubsan()])("")
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.splitlines() == [python_value(nots, dict(a=1)), python_value(ands, dict(a=1, b=0, c=2))]
 
 
-def test_several_chains_with_temporaries_in_one_condition(run_scribe, compiler):
+def test_several_chains_with_temporaries_in_one_condition(run_apik, compiler):
     program = (
         "a, b, c = 1, 2, 5\n"
         "if (a < b + 1 < c) and (c > b * 2 >= a) and not (a == b - 1 == c) {\n"
@@ -359,10 +359,10 @@ def test_several_chains_with_temporaries_in_one_condition(run_scribe, compiler):
     )
     source = compiler.compile(program).c_source
     assert "int64_t t_1 = 0;" in source and "int64_t t_3 = 0;" in source
-    assert run_scribe(program) == "yes\n"
+    assert run_apik(program) == "yes\n"
 
 
-def test_bools_in_assignments_and_declarations(run_scribe):
+def test_bools_in_assignments_and_declarations(run_apik):
     program = (
         "a, b = 1, 2\n"
         "p, q = true, false\n"
@@ -371,10 +371,10 @@ def test_bools_in_assignments_and_declarations(run_scribe):
         "bool: t = p or q, u = not t\n"
         "print p\nprint q\nprint r\nprint s\nprint t\nprint u\n"
     )
-    assert run_scribe(program) == "false\ntrue\ntrue\ntrue\ntrue\nfalse\n"
+    assert run_apik(program) == "false\ntrue\ntrue\ntrue\ntrue\nfalse\n"
 
 
-def test_not_applies_to_a_whole_comparison_or_chain(run_scribe):
-    assert run_scribe("a = 5\nprint not a == 5\nprint not 1 < a < 10\nprint not (a == 5) == false\n") == (
+def test_not_applies_to_a_whole_comparison_or_chain(run_apik):
+    assert run_apik("a = 5\nprint not a == 5\nprint not 1 < a < 10\nprint not (a == 5) == false\n") == (
         "false\nfalse\ntrue\n"
     )

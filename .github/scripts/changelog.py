@@ -60,7 +60,7 @@ def main(argv: list[str]) -> int:
     if args.command == "check":
         added = new_entries(args.base.read_text(encoding="utf-8"), args.head.read_text(encoding="utf-8"))
         if not added:
-            print('This pull request changes scribe_lang/ but adds no entry under "Unreleased" in '
+            print('This pull request changes apik26/ but adds no entry under "Unreleased" in '
                   "CHANGELOG.md. Add one, or add the no-changelog label if users will not notice the change.")
             return 1
         print("New changelog entries:", *added, sep="\n")

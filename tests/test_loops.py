@@ -2,23 +2,23 @@
 and the deprecation of `goto` and `label`."""
 import pytest
 
-from scribe_lang.ast import Break, Continue, While
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.parser import Parser
-from scribe_lang.semantics import SemanticAnalyzer
+from apik26.ast import Break, Continue, While
+from apik26.diagnostics import Diagnostics
+from apik26.parser import Parser
+from apik26.semantics import SemanticAnalyzer
 
 PARSER = Parser()
 
 
 def parse(source):
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(source, diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     return program
 
 
 def analyze(source):
-    diagnostics = Diagnostics("t.scribe")
+    diagnostics = Diagnostics("t.apik")
     program = PARSER.parse(source, diagnostics)
     assert program is not None, [d.message for d in diagnostics]
     SemanticAnalyzer().analyze(program, diagnostics)
@@ -114,8 +114,8 @@ def test_goto_and_label_are_deprecated():
     assert "deprecated" in found[0].message and "break" in found[0].help
 
 
-def test_a_deprecated_program_still_compiles(run_scribe):
-    assert run_scribe("i = 1\nlabel again\nprint i\ni = i + 1\nif i <= 2 {\n    goto again\n}\n") == "1\n2\n"
+def test_a_deprecated_program_still_compiles(run_apik):
+    assert run_apik("i = 1\nlabel again\nprint i\ni = i + 1\nif i <= 2 {\n    goto again\n}\n") == "1\n2\n"
 
 
 # -- emitted C and run time ----------------------------------------------------------
@@ -158,11 +158,11 @@ def test_an_outer_target_jumps_to_a_label(compiler):
     ("n = 0\nwhile n < 2 {\n    n = n + 1\n    i64: count\n    count = count + n\n    print count\n    continue\n}\n",
      "1\n2\n"),
 ])
-def test_loops_run(run_scribe, source, output):
-    assert run_scribe(source) == output
+def test_loops_run(run_apik, source, output):
+    assert run_apik(source) == output
 
 
-def test_find_a_pair_with_named_loops(run_scribe):
+def test_find_a_pair_with_named_loops(run_apik):
     source = '''target = 11
 i = 1
 found = false
@@ -181,4 +181,4 @@ print found
 print i
 '''
     # 22 = 2 * 11 has no factor pair with both factors in 1..9.
-    assert run_scribe(source) == "false\n10\n"
+    assert run_apik(source) == "false\n10\n"

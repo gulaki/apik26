@@ -1,4 +1,4 @@
 # PROPOSAL: there is no pointer syntax and no address-of, ever.
-#   error: `&` is not an operator in Scribe
+#   error: `&` is not an operator in APIK26
 x = 1
 p = &x

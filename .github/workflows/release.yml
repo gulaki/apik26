@@ -32,7 +32,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - run: python -m pip install -e ".[test]"
-      # VERSION.txt, CHANGELOG.md, the package and `scribe --version` agree.
+      # VERSION.txt, CHANGELOG.md, the package and `apik26 --version` agree.
       - run: python -m pytest -q tests/test_version.py tests/test_changelog_script.py
       - name: Tag and publish
         env:
@@ -46,5 +46,5 @@ jobs:
           fi
           python .github/scripts/changelog.py notes "$version" \
             --link-base "https://github.com/$REPO/blob/v$version/" > "$RUNNER_TEMP/notes.md"
-          gh release create "v$version" --target "$GITHUB_SHA" --title "Scribe $version" \
+          gh release create "v$version" --target "$GITHUB_SHA" --title "APIK26 $version" \
             --notes-file "$RUNNER_TEMP/notes.md"

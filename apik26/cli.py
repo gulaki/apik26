@@ -20,8 +20,8 @@ EXIT_INTERNAL_ERROR = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Scribe-lang compiler powered by Lark")
-    p.add_argument("--version", action="version", version=f"scribe {version()}")
+    p = argparse.ArgumentParser(description="APIK26 compiler powered by Lark")
+    p.add_argument("--version", action="version", version=f"apik26 {version()}")
     p.add_argument("source", type=Path)
     p.add_argument(
         "-o", "--output", type=Path,
@@ -101,7 +101,7 @@ def _run(args, filename: str) -> int:
     try:
         result = compiler.write_c(source, args.output, filename)
     except OSError as exc:
-        print(f"scribe: error: cannot write {args.output}: {exc.strerror or exc}", file=sys.stderr)
+        print(f"apik26: error: cannot write {args.output}: {exc.strerror or exc}", file=sys.stderr)
         return EXIT_ERRORS
     _print_diagnostics(result.diagnostics, source, args.diagnostics_format)
     if not result.ok:
@@ -118,7 +118,7 @@ def _run(args, filename: str) -> int:
             config = BuildConfig(libraries=result.link_libraries)
             compiler.write_build_file(args.build, args.output, executable, build_file, config)
         except OSError as exc:
-            print(f"scribe: error: cannot write {build_file}: {exc.strerror or exc}", file=sys.stderr)
+            print(f"apik26: error: cannot write {build_file}: {exc.strerror or exc}", file=sys.stderr)
             return EXIT_ERRORS
     return EXIT_OK
 
@@ -135,7 +135,7 @@ def _build_wasm(args, compiler: Compiler, source: str, filename: str) -> int:
         write_folder(result, args.source, folder, args.shell, args.build, args.web_assets)
     except (WasmError, OSError) as exc:
         reason = exc.strerror if isinstance(exc, OSError) and exc.strerror else str(exc)
-        print(f"scribe: error: {reason}", file=sys.stderr)
+        print(f"apik26: error: {reason}", file=sys.stderr)
         return EXIT_ERRORS
     return EXIT_OK
 

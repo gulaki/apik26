@@ -1,17 +1,17 @@
 """The WebAssembly target (`--target wasm`): a folder of generated files that
 Emscripten builds into a program for Node (`--shell node`) or a browser
-terminal (`--shell web`). Scribe only writes files; `--build make|ninja`
+terminal (`--shell web`). APIK26 only writes files; `--build make|ninja`
 adds the build file that runs emcc."""
 import pytest
 
-from scribe_lang.cli import main
+from apik26.cli import main
 
 PROGRAM = 'print "hi"\nn = 6\nprint n * 7\n'
 
 
 @pytest.fixture
 def source(tmp_path):
-    path = tmp_path / "answer.scribe"
+    path = tmp_path / "answer.apik"
     path.write_text(PROGRAM, encoding="utf-8")
     return path
 
@@ -38,7 +38,7 @@ def test_options_that_need_another_option_are_errors(source, capsys, args, messa
 def test_the_folder_defaults_to_one_next_to_the_source(source):
     assert run_cli(source, "--target", "wasm", "--shell", "node") == 0
     folder = source.parent / "answer"
-    assert sorted(p.name for p in folder.iterdir()) == [".scribe-wasm", "answer.c"]
+    assert sorted(p.name for p in folder.iterdir()) == [".apik-wasm", "answer.c"]
 
 
 def test_o_names_the_folder(source, tmp_path):
@@ -46,12 +46,12 @@ def test_o_names_the_folder(source, tmp_path):
     assert (tmp_path / "out" / "answer.c").exists()
 
 
-def test_a_folder_scribe_did_not_write_is_left_alone(source, capsys):
+def test_a_folder_apik_did_not_write_is_left_alone(source, capsys):
     folder = source.parent / "answer"
     folder.mkdir()
     (folder / "notes.txt").write_text("mine", encoding="utf-8")
     assert run_cli(source, "--target", "wasm", "--shell", "node") == 1
-    assert "was not written by scribe" in capsys.readouterr().err
+    assert "was not written by apik26" in capsys.readouterr().err
     assert sorted(p.name for p in folder.iterdir()) == ["notes.txt"]
 
 
@@ -109,7 +109,7 @@ def web_folder(source, *args):
 def test_web_is_the_default_shell_and_vendors_the_libraries(source):
     folder = web_folder(source)
     names = sorted(p.name for p in folder.iterdir())
-    assert names == sorted([".scribe-wasm", "answer.c", "index.html", "scribe-term.js", "scribe-term.css",
+    assert names == sorted([".apik-wasm", "answer.c", "index.html", "apik-term.js", "apik-term.css",
                             "emscripten-pty.js", "LICENSES.txt", *VENDORED])
     page = (folder / "index.html").read_text(encoding="utf-8")
     assert '<body data-program="answer">' in page and "<title>answer</title>" in page
@@ -139,9 +139,9 @@ def test_the_vendored_files_match_the_manifest_hashes():
     import hashlib
     from pathlib import Path
 
-    from scribe_lang.wasm import manifest
+    from apik26.wasm import manifest
 
-    vendor = Path(__file__).resolve().parent.parent / "scribe_lang" / "web" / "vendor"
+    vendor = Path(__file__).resolve().parent.parent / "apik26" / "web" / "vendor"
     for library in manifest()["libraries"]:
         assert (vendor / library["license"]).exists()
         for entry in library["files"]:
@@ -161,7 +161,7 @@ def test_licenses_list_the_copied_libraries(source):
 
 def test_web_makefile(source):
     text = (web_folder(source, "--build", "make") / "Makefile").read_text(encoding="utf-8")
-    assert "CFLAGS ?= -std=c11 -O2 -DSCRIBE_COLOR_ERRORS\n" in text
+    assert "CFLAGS ?= -std=c11 -O2 -DAPIK_COLOR_ERRORS\n" in text
     assert "-sASYNCIFY -sFORCE_FILESYSTEM" in text and "--js-library=emscripten-pty.js" in text
     assert "answer.mjs: answer.c\n" in text
 
@@ -173,8 +173,8 @@ def test_the_page_script_is_valid_javascript(tmp_path):
     from conftest import require_tool
 
     node = require_tool("node")
-    script = Path(__file__).resolve().parent.parent / "scribe_lang" / "web" / "scribe-term.js"
-    module = tmp_path / "scribe-term.mjs"  # node --check reads .mjs as a module
+    script = Path(__file__).resolve().parent.parent / "apik26" / "web" / "apik-term.js"
+    module = tmp_path / "apik-term.mjs"  # node --check reads .mjs as a module
     module.write_text(script.read_text(encoding="utf-8"), encoding="utf-8")
     check = subprocess.run([node, "--check", str(module)], capture_output=True, text=True)
     assert check.returncode == 0, check.stderr
@@ -185,11 +185,11 @@ def test_the_page_script_is_valid_javascript(tmp_path):
 CRASH = "x = 9223372036854775807\ny = x + 1\n"
 
 
-def test_runtime_errors_are_red_when_scribe_color_errors_is_defined(build_scribe):
-    plain = build_scribe(CRASH, [])("")
-    red = build_scribe(CRASH, ["-DSCRIBE_COLOR_ERRORS"])("")
-    assert plain.stderr == "t.scribe:2:7: runtime error: integer overflow\n"
-    assert red.stderr == "\x1b[31mt.scribe:2:7: runtime error: integer overflow\x1b[0m\n"
+def test_runtime_errors_are_red_when_apik_color_errors_is_defined(build_apik):
+    plain = build_apik(CRASH, [])("")
+    red = build_apik(CRASH, ["-DAPIK_COLOR_ERRORS"])("")
+    assert plain.stderr == "t.apik:2:7: runtime error: integer overflow\n"
+    assert red.stderr == "\x1b[31mt.apik:2:7: runtime error: integer overflow\x1b[0m\n"
     assert plain.returncode != 0 and red.returncode != 0
 
 
@@ -236,8 +236,8 @@ def test_every_example_prints_the_same_under_node(tmp_path, name):
     from conftest import EXAMPLES
 
     stdin, expected = _example_runs()[name]
-    source_path = tmp_path / f"{name}.scribe"
-    source_path.write_text((EXAMPLES / f"{name}.scribe").read_text(encoding="utf-8"), encoding="utf-8")
+    source_path = tmp_path / f"{name}.apik"
+    source_path.write_text((EXAMPLES / f"{name}.apik").read_text(encoding="utf-8"), encoding="utf-8")
     run = run_node(build_with_emcc(source_path, "--shell", "node"), stdin)
     assert (run.returncode, run.stdout) == (0, expected), run.stderr
 
@@ -249,7 +249,7 @@ def test_every_example_prints_the_same_under_node(tmp_path, name):
     ("x = 1e300\nprint i64(x)\n", "2:7: runtime error: value out of range for i64"),
 ])
 def test_runtime_errors_are_the_same_under_node(tmp_path, program, message):
-    source_path = tmp_path / "crash.scribe"
+    source_path = tmp_path / "crash.apik"
     source_path.write_text(program, encoding="utf-8")
     run = run_node(build_with_emcc(source_path, "--shell", "node"))
     assert run.returncode != 0
@@ -261,8 +261,8 @@ def test_runtime_errors_are_the_same_under_node(tmp_path, program, message):
 def test_examples_build_for_the_web_shell(tmp_path, name):
     from conftest import EXAMPLES
 
-    source_path = tmp_path / f"{name}.scribe"
-    source_path.write_text((EXAMPLES / f"{name}.scribe").read_text(encoding="utf-8"), encoding="utf-8")
+    source_path = tmp_path / f"{name}.apik"
+    source_path.write_text((EXAMPLES / f"{name}.apik").read_text(encoding="utf-8"), encoding="utf-8")
     folder = build_with_emcc(source_path)
     assert (folder / f"{name}.mjs").stat().st_size > 0
     assert (folder / f"{name}.wasm").read_bytes()[:4] == b"\0asm"

@@ -10,12 +10,12 @@ examples/future/  proposals for later versions. They must NOT compile today:
 """
 import pytest
 
-from scribe_lang import diagnostics
+from apik26 import diagnostics
 
 from conftest import EXAMPLES, expected_diagnostics
 
-ERROR_EXAMPLES = sorted((EXAMPLES / "errors").glob("*.scribe"))
-FUTURE_EXAMPLES = sorted((EXAMPLES / "future").rglob("*.scribe"))
+ERROR_EXAMPLES = sorted((EXAMPLES / "errors").glob("*.apik"))
+FUTURE_EXAMPLES = sorted((EXAMPLES / "future").rglob("*.apik"))
 
 # Codes that no source file can trigger: they come from the driver.
 NOT_FROM_SOURCE = {diagnostics.INTERNAL_ERROR.code, diagnostics.CANNOT_READ_SOURCE.code}

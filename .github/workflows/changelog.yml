@@ -1,4 +1,4 @@
-# A pull request that changes the compiler (scribe_lang/) adds an entry
+# A pull request that changes the compiler (apik26/) adds an entry
 # under "Unreleased" in CHANGELOG.md, or carries the no-changelog label.
 name: Changelog
 
@@ -27,8 +27,8 @@ jobs:
             echo "The no-changelog label is set: no entry needed."
             exit 0
           fi
-          if git diff --quiet "$BASE_SHA"...HEAD -- scribe_lang/; then
-            echo "scribe_lang/ is unchanged: no entry needed."
+          if git diff --quiet "$BASE_SHA"...HEAD -- apik26/; then
+            echo "apik26/ is unchanged: no entry needed."
             exit 0
           fi
           git show "$BASE_SHA:CHANGELOG.md" > "$RUNNER_TEMP/base-changelog.md"

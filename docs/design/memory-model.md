@@ -43,7 +43,7 @@ Optimisations to add once correct: elide RC traffic on borrows, unique-to-shared
 
 ## 5. Runtime support
 
-One allocation wrapper `scribe_alloc(size, align)` that checks size arithmetic and traps on failure; one `scribe_free`. Debug builds add canaries and a live-allocation list that must be empty at exit (leak check in CI).
+One allocation wrapper `apik_alloc(size, align)` that checks size arithmetic and traps on failure; one `apik_free`. Debug builds add canaries and a live-allocation list that must be empty at exit (leak check in CI).
 
 ## 6. Open points
 

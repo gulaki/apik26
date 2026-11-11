@@ -1,13 +1,13 @@
-# The Scribe language
+# The APIK26 language
 
 This page describes the language as it is today. Everything on it works, and
-every `scribe` example is compiled and run by the test suite
+every `apik` example is compiled and run by the test suite
 (`tests/test_docs.py`), so the examples and their output stay correct. Plans
 and the reasons behind the rules are in the [design documents](design/).
 
 ## A first program
 
-```scribe
+```apik
 # stdin: 5
 print "How many?"
 i64: n
@@ -29,12 +29,12 @@ How many?
 Compile it to C, build it, and run it:
 
 ```sh
-scribe sum.scribe -o build/sum.c
+apik26 sum.apik -o build/sum.c
 cc -std=c11 build/sum.c -o build/sum
 echo 5 | build/sum
 ```
 
-`scribe` is installed by `pip install -e .`; `python -m scribe_lang.cli` does
+`apik26` is installed by `pip install -e .`; `python -m apik26.cli` does
 the same. A program that uses a C library function, so far a float `**`,
 `//` or `%`, starts its C file with a comment such as `/* Link with: -lm */`: add `-lm`
 at the end of the `cc` command. (`--build make` and `--build ninja` do this
@@ -59,7 +59,7 @@ under Node, with no change to the source: `--target wasm` (see the
 by a newline. Its escapes are `\"`, `\\`, `\n`, `\r` and `\t`. Integers print
 as integers, floats with two decimals, and bools as `true` or `false`.
 
-```scribe
+```apik
 print "100% sure, and \"quoted\""
 print 7
 print 2.5
@@ -82,7 +82,7 @@ does not exist yet, `input x` creates it as an `f64`. To read a whole number,
 declare it first. A `bool` cannot be read: read an `i64`, check it, and
 convert it with `bool(n)`.
 
-```scribe
+```apik
 # stdin: 42\n2.5\nhello
 i64: n
 input n
@@ -108,7 +108,7 @@ The first assignment to a name creates the variable, and its value gives the
 variable its type for good. Later assignments must fit that type without
 losing anything.
 
-```scribe
+```apik
 count = 0        # i64
 ratio = 0.5      # f64
 ratio = 3        # fine: 3 is exactly 3.0
@@ -121,7 +121,7 @@ print ratio
 3.00
 ```
 
-```scribe-error
+```apik-error
 # expect: E0501 at 3:9
 count = 0
 count = 2.5
@@ -132,7 +132,7 @@ count = 2.5
 `type: names` declares variables explicitly. Each starts at zero unless it is
 given a value, and later names can use earlier ones.
 
-```scribe
+```apik
 i64: a, b = 5, c
 f64: x, y = 2.5
 i64: lo = 1, hi = lo + 9
@@ -149,10 +149,10 @@ print hi
 10
 ```
 
-A declaration always makes a new variable, and Scribe has no shadowing, so a
+A declaration always makes a new variable, and APIK26 has no shadowing, so a
 name that is already visible cannot be declared again:
 
-```scribe-error
+```apik-error
 # expect: E0203 at 3:6
 total = 0
 i64: total
@@ -166,7 +166,7 @@ loop body or after a `goto`, the variable gets its starting value again.
 `a = b = c = value` means `c = value`, then `b = c`, then `a = b`. The value
 is computed once, and a new variable takes the type of the one to its right.
 
-```scribe
+```apik
 low = high = 7
 print low + high
 ```
@@ -180,7 +180,7 @@ print low + high
 `a, b = x, y` computes every value first, left to right, and then assigns
 them. So `a, b = b, a` swaps, and the values always see the old variables.
 
-```scribe
+```apik
 a, b = 0, 1
 i = 0
 while i < 10 {
@@ -202,7 +202,7 @@ Because the values come first, they cannot use a variable that the same
 statement creates. Names and values must match in number, and no name may
 appear twice:
 
-```scribe-error
+```apik-error
 # expect: E0201 at 4:20
 # expect: E0601 at 5:1
 a, b = 1, 2
@@ -225,7 +225,7 @@ c, d = 1
 - Every variable starts at 0, including one first assigned inside a block,
   on every pass through that block.
 
-```scribe
+```apik
 x = 1
 {
     x = x + 1      # x is visible: this changes it
@@ -264,7 +264,7 @@ A literal takes the type that its context needs, as long as its value fits
 exactly. On its own, an integer literal is an `i64` and a float literal an
 `f64`.
 
-```scribe
+```apik
 print 0x10 + 0o10 + 0b10
 f = 1.5f
 print f + 2        # 2 becomes an f32
@@ -280,7 +280,7 @@ print f + 2        # 2 becomes an f32
 Integer expressions made only of literals are computed exactly when the
 program is compiled, so only the final value has to fit in an `i64`.
 
-```scribe
+```apik
 print -9223372036854775808
 print 4294967296 * 4294967296 // 4294967296
 ```
@@ -304,7 +304,7 @@ There are three operators, and each one does one thing:
 - `//` and `%` work on floats too, with the same meaning: `-7.5 // 2` is
   `-4.0` and `-7.5 % 2` is `0.5`.
 
-```scribe
+```apik
 print 7 / 2
 f64: half = 1 / 2
 print half
@@ -331,12 +331,12 @@ On floats, `//` and `%` are exact on the values the floats hold. A float
 such as `0.1` is a binary fraction, a little more than one tenth, so 1
 holds it only 9 whole times, and `1 // 0.1` is `9.0`, with remainder
 `0.09999999999999995`. Rounding `1 / 0.1` first would give `10.0`, which is
-how `floor(a / b)` goes wrong. Scribe computes the exact floor of the
+how `floor(a / b)` goes wrong. APIK26 computes the exact floor of the
 quotient, and the exact remainder rounded once, as IEEE 754 does for `+`,
 `-`, `*` and `/`. Past 2^53 (2^24 for `f32`), where every float is a whole
 number, `a // b` is `a / b` rounded.
 
-```scribe
+```apik
 print 1 // 0.1
 print -7.5 // 2
 print -7.5 % 2
@@ -352,7 +352,7 @@ print 7.5 % -2
 
 These call C's maths library, so the C file asks for `-lm`.
 
-```scribe-error
+```apik-error
 # expect: E0511 at 3:9
 n = 7
 print n / 2
@@ -374,7 +374,7 @@ than a sign on its left and groups from the right: `-2 ** 2` is `-4`, and
 - The operands mix like `+`: `x ** 2` is fine for an `f64` `x`, but an `f64`
   raised to an `i64` variable needs a cast, `x ** f64(n)`.
 
-```scribe
+```apik
 print 2 ** 10
 print -2 ** 2
 print 2 ** 3 ** 2
@@ -391,7 +391,7 @@ print x ** -1
 0.50
 ```
 
-```scribe-error
+```apik-error
 # expect: E0512 at 2:12
 print 2 ** -1
 ```
@@ -402,7 +402,7 @@ An operator or a comparison on two types works in the smallest type that
 holds every value of both. `f32 + f64` is an `f64`. No type holds every
 `i64` and every `f64` exactly, so mixing them needs a cast:
 
-```scribe-error
+```apik-error
 # expect: E0502 at 4:9
 n = 3
 x = 0.5
@@ -422,7 +422,7 @@ A cast is written like a call: `i64(x)`, `f64(n)`, `f32(x)`, `bool(n)`.
 | `bool(n)` from an integer | `n != 0`; from a float it is an error (E0505) |
 | `i64(flag)`, `f64(flag)`, `f32(flag)` from a bool | 0 or 1 |
 
-```scribe
+```apik
 n = 3
 x = 0.5
 print f64(n) * x
@@ -441,7 +441,7 @@ print i64(-2.75)
 `true` and `false` are the two `bool` values. Comparisons give a `bool`, so
 `flag = a < b` makes `flag` a bool, and so do `not`, `and` and `or`.
 
-```scribe
+```apik
 n = 7
 small = n < 10
 print small
@@ -463,7 +463,7 @@ A condition of `if`, `elif` or `while`, and each operand of `not`, `and` and
 `or`, must be a `bool` or an integer. An integer counts as true when it is not
 0, so `while n {` loops until `n` reaches 0.
 
-```scribe
+```apik
 n = 3
 while n {
     print n
@@ -480,7 +480,7 @@ while n {
 A float is not a truth value, because a float `x` can be NaN, which is not
 zero, or `-0.0`, which is. Compare it explicitly instead: `x != 0.0`.
 
-```scribe-error
+```apik-error
 # expect: E0505 at 3:4
 x = 0.5
 if x {
@@ -494,7 +494,7 @@ b` does not evaluate `b` when `a` is false, and `a or b` does not evaluate
 `b` when `a` is true. So a test can guard a check that would stop the
 program:
 
-```scribe
+```apik
 n = 0
 if n == 0 or 10 // n > 1 {
     print "safe"
@@ -516,7 +516,7 @@ means `not (a == b)`. `and` binds more tightly than `or`.
 points one way, all `<`/`<=` or all `>`/`>=`, or is all `==`. Its operands are
 compared in one common type.
 
-```scribe
+```apik
 low, x, high = 1, 5, 10
 print low <= x < high
 print low == x == high
@@ -536,7 +536,7 @@ or a bool, and `x == x` is `false` only when the float `x` is NaN.
 differ: `1 != 2 != 1` is true in Python. A chain that changes direction, such
 as `a < b > c`, is an error too.
 
-```scribe-error
+```apik-error
 # expect: E0507 at 4:9
 # expect: E0508 at 5:13
 a, b, c = 1, 2, 1
@@ -550,7 +550,7 @@ A `bool` has no arithmetic and no order, and nothing converts to or from it
 implicitly. `bool(n)` tests an integer (`n != 0`), and `i64(flag)`,
 `f64(flag)` or `f32(flag)` give 0 or 1. Two bools compare with `==` and `!=`.
 
-```scribe
+```apik
 flag = true
 count = i64(flag) + i64(false)
 print count
@@ -564,7 +564,7 @@ true
 true
 ```
 
-```scribe-error
+```apik-error
 # expect: E0506 at 5:12
 # expect: E0501 at 6:15
 # expect: E0509 at 7:1
@@ -597,7 +597,7 @@ Parentheses group explicitly. A value can have only one sign, so write `-(-x)`, 
 repeats its body while its condition holds. A condition is a `bool` or an
 integer (see [Truth tests](#truth-tests)). A bare `{ ... }` is just a scope.
 
-```scribe
+```apik
 score = 85
 if score >= 90 {
     print "A"
@@ -617,7 +617,7 @@ B
 `break` leaves the innermost loop. `continue` skips the rest of its body and
 goes on to the next pass, so the condition is tested again.
 
-```scribe
+```apik
 i = 0
 while true {
     i = i + 1
@@ -642,7 +642,7 @@ To leave or continue an *outer* loop, name it with `as`: `while cond as
 name {`. Then `break name` or `continue name` works from any loop nested
 inside it.
 
-```scribe
+```apik
 # The first pair a < b with a * b == 12.
 a = 1
 while a <= 12 as pairs {
@@ -669,7 +669,7 @@ or adding a loop can never silently change which one it leaves: a name that
 no longer fits is an error. A nested loop can't reuse the name of a loop
 around it, but loops side by side may share a name.
 
-```scribe-error
+```apik-error
 # expect: E0304 at 3:1
 # expect: E0305 at 5:11
 break
@@ -687,7 +687,7 @@ for an outer loop, instead. Until then, labels share one namespace for the
 whole program, and a `goto` may jump within its own block or out to an
 enclosing one, but never into a nested block.
 
-```scribe-error
+```apik-error
 # expect: W0001 at 4:1
 # expect: W0001 at 7:5
 i = 1
@@ -711,7 +711,7 @@ with a nonzero exit status:
 - `i64(x)` where `x` is NaN, infinite or out of range.
 
 ```text
-prog.scribe:4:11: runtime error: integer overflow
+prog.apik:4:11: runtime error: integer overflow
 ```
 
 Compile-time errors are listed in [errors.md](errors.md).
@@ -739,14 +739,14 @@ names `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `f16`, `f32`,
 
 ## How a program becomes C
 
-Each Scribe variable `x` becomes the C variable `v_x`, and each label `top`
-becomes `l_top`, so no Scribe name can clash with C. Program-level variables
+Each APIK26 variable `x` becomes the C variable `v_x`, and each label `top`
+becomes `l_top`, so no APIK26 name can clash with C. Program-level variables
 are zero-initialised globals. A variable from a block is declared, set to
 zero, at the top of that C block, so a `goto` can never skip its declaration.
 `break` and `continue` of the innermost loop are C's own; for an outer loop
 they become a `goto` to a label the compiler puts after that loop
 (`break_pairs_1`) or at the end of its body (`continue_pairs_1`).
-Integer arithmetic calls small checked helpers such as `scribe_add_i64`,
+Integer arithmetic calls small checked helpers such as `apik_add_i64`,
 emitted only when a program uses them. A `bool` is a `uint8_t` that is
 always 0 or 1, and `and`/`or` become C's `&&` and `||`. The C builds with
 `cc -std=c11 -pedantic-errors -Wall -Wextra`. One known exception to a

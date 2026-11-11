@@ -1,12 +1,12 @@
 # Contributing
 
-Scribe has no license yet, so it is not open to outside contributions. This
+APIK26 has no license yet, so it is not open to outside contributions. This
 guide is how changes are made here, by the maintainer and by AI assistants
 working with them.
 
 ## The rule
 
-Scribe compiles to strictly conforming ISO C, and a program that compiles
+APIK26 compiles to strictly conforming ISO C, and a program that compiles
 must never reach undefined behaviour. Every change keeps that true, and
 keeps what already works working: [CI](.github/workflows/ci.yml) runs
 the whole test suite on Linux, macOS, Windows and WebAssembly before
@@ -26,7 +26,7 @@ anything is merged.
    ([`docs/language.md`](docs/language.md)), the design notes and the error
    catalogue ([`docs/errors.md`](docs/errors.md)) describe the language as
    it is. `tests/test_docs.py` compiles and runs every example in them.
-5. **A changelog entry.** A pull request that changes `scribe_lang/` adds
+5. **A changelog entry.** A pull request that changes `apik26/` adds
    an entry under "Unreleased" in [`CHANGELOG.md`](CHANGELOG.md), and the
    [Changelog check](.github/workflows/changelog.yml) fails without one. A
    change with nothing to tell users (a refactor, a test) takes the
@@ -42,8 +42,8 @@ anything is merged.
 ```sh
 pip install -e ".[test]"
 python -m pytest                     # everything
-SCRIBE_SANITIZE=1 python -m pytest   # also build every program with UBSan
-python -m pytest --cov               # with coverage of scribe_lang/
+APIK_SANITIZE=1 python -m pytest   # also build every program with UBSan
+python -m pytest --cov               # with coverage of apik26/
 ```
 
 Coverage must not drop below `fail_under` in `pyproject.toml`; CI checks
@@ -51,14 +51,14 @@ it. When a change raises it, raise `fail_under` too.
 
 A test that needs a missing tool (a C compiler, UBSan, make, node, emcc)
 skips itself locally. CI names the tools each job must have in
-`SCRIBE_REQUIRE`, and there a missing tool fails the test instead.
+`APIK_REQUIRE`, and there a missing tool fails the test instead.
 
 CI's macOS job runs on Intel, because GitHub's Apple silicon runners are
 often short of capacity. Before opening a pull request, run the suite on
 an Apple silicon Mac, with UBSan:
 
 ```sh
-SCRIBE_REQUIRE=cc,ubsan,make,node SCRIBE_SANITIZE=1 python -m pytest
+APIK_REQUIRE=cc,ubsan,make,node APIK_SANITIZE=1 python -m pytest
 ```
 
 ## Error codes

@@ -3,11 +3,11 @@ from pathlib import Path
 
 import pytest
 
-import scribe_lang
-from scribe_lang.ast import Block, IntLit, Let, Program
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.parser import Parser
-from scribe_lang.semantics import RESERVED_WORDS, SemanticAnalyzer
+import apik26
+from apik26.ast import Block, IntLit, Let, Program
+from apik26.diagnostics import Diagnostics
+from apik26.parser import Parser
+from apik26.semantics import RESERVED_WORDS, SemanticAnalyzer
 
 
 def names(scope):
@@ -188,7 +188,7 @@ def test_keyword_as_a_label_name_is_rejected(compiler, word):
 
 
 def test_reserved_words_match_the_keywords_in_the_grammar():
-    grammar = Path(scribe_lang.__file__).parent / "grammar" / "scribe_lang.lark"
+    grammar = Path(apik26.__file__).parent / "grammar" / "apik26.lark"
     keywords = set(re.findall(r'^[A-Z0-9_]+:\s*"([a-z0-9]+)"\s*$', grammar.read_text(), re.MULTILINE))
     assert keywords == set(RESERVED_WORDS)
 
@@ -198,7 +198,7 @@ def test_reserved_words_match_the_keywords_in_the_grammar():
 def analyze(source):
     """(code, line, column) for every error, in the order reported. Warnings,
     such as W0001 for `goto` and `label`, are tested in test_loops.py."""
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     SemanticAnalyzer().analyze(Parser().parse(source), diags)
     return [(x.code.code, x.span.line, x.span.column) for x in diags.errors]
 
@@ -232,7 +232,7 @@ def test_a_duplicate_label_does_not_hide_later_checks():
 
 
 def notes(source):
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     SemanticAnalyzer().analyze(Parser().parse(source), diags)
     (diag,) = diags.errors
     return [(n.message, n.span.line, n.span.column) for n in diag.notes]
@@ -255,10 +255,10 @@ def test_variable_from_an_ended_block_points_at_its_declaration():
 
 
 def test_undeclared_variable_span_covers_the_name():
-    diags = Diagnostics("t.scribe")
+    diags = Diagnostics("t.apik")
     SemanticAnalyzer().analyze(Parser().parse("print total\n"), diags)
     (diag,) = diags
-    assert (diag.span.filename, diag.span.column, diag.span.end_column) == ("t.scribe", 7, 12)
+    assert (diag.span.filename, diag.span.column, diag.span.end_column) == ("t.apik", 7, 12)
 
 
 def test_a_clean_program_reports_nothing():

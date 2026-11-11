@@ -3,8 +3,8 @@ import re
 
 import pytest
 
-from scribe_lang import diagnostics as d
-from scribe_lang.ast import SourceLocation
+from apik26 import diagnostics as d
+from apik26.ast import SourceLocation
 
 
 def test_codes_are_well_formed_and_unique():
@@ -42,32 +42,32 @@ def test_every_template_formats_with_its_own_placeholders():
 
 
 def test_report_fills_in_the_template_and_span():
-    diags = d.Diagnostics("prog.scribe")
+    diags = d.Diagnostics("prog.apik")
     loc = SourceLocation(line=2, column=7, end_line=2, end_column=12)
     diag = diags.error(d.UNDECLARED_VARIABLE, loc, name="total")
     assert diag.message == "use of undeclared variable 'total'"
-    assert diag.span == d.Span("prog.scribe", 2, 7, 2, 12)
+    assert diag.span == d.Span("prog.apik", 2, 7, 2, 12)
     assert diag.code.code == "E0201"
     assert diag.is_error
     assert list(diags) == [diag]
 
 
 def test_notes_and_help_are_kept():
-    diags = d.Diagnostics("p.scribe")
+    diags = d.Diagnostics("p.apik")
     first = SourceLocation(line=1, column=1, end_line=1, end_column=6)
     diag = diags.error(
         d.DUPLICATE_LABEL, SourceLocation(line=4, column=1), name="top",
         notes=(("first defined here", first),), help="rename one of them",
     )
-    assert diag.notes == (d.Note("first defined here", d.Span("p.scribe", 1, 1, 1, 6)),)
+    assert diag.notes == (d.Note("first defined here", d.Span("p.apik", 1, 1, 1, 6)),)
     assert diag.help == "rename one of them"
 
 
 def test_report_accepts_a_ready_made_span_or_nothing():
-    diags = d.Diagnostics("p.scribe")
-    span = d.Span("other.scribe", 3, 1)
+    diags = d.Diagnostics("p.apik")
+    span = d.Span("other.apik", 3, 1)
     assert diags.error(d.UNEXPECTED_CHARACTER, span, char="'@'").span is span
-    assert diags.error(d.CANNOT_READ_SOURCE, None, path="x", reason="gone").span == d.Span("p.scribe")
+    assert diags.error(d.CANNOT_READ_SOURCE, None, path="x", reason="gone").span == d.Span("p.apik")
 
 
 def test_collector_keeps_order_and_separates_warnings():

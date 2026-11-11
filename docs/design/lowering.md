@@ -16,13 +16,13 @@ Each stage is a pure function over a data structure, printable for tests. Today'
 
 All generated names are deterministic and readable.
 
-| Scribe | C |
+| APIK26 | C |
 |---|---|
-| variable `x` | `v_x` (Scribe has no shadowing, so never a suffix) — done |
+| variable `x` | `v_x` (APIK26 has no shadowing, so never a suffix) — done |
 | label `top` | `l_top` — done (deprecated) |
 | `break`/`continue` of an outer loop `rows` | `goto break_rows_1;` / `goto continue_rows_1;`, numbered per loop name, emitted only when jumped to — done |
 | temporaries | `t_1`, `t_2`, ... — done (multiple assignment, comparison chains), numbered per program for now; per function later |
-| runtime helpers | `scribe_add_i64`, `scribe_trap`, `scribe_read_f64`, ... — done |
+| runtime helpers | `apik_add_i64`, `apik_trap`, `apik_read_f64`, ... — done |
 | function `gcd(i64,i64)` | `f_gcd__i64_i64` |
 | overload `describe(f64)` | `f_describe__f64` |
 | method `Account.deposit` | `m_Account__deposit` |
@@ -32,7 +32,7 @@ All generated names are deterministic and readable.
 | result pointer of a function | `r_result` |
 | error exit of a function | `fail` |
 
-Prefix letters keep namespaces disjoint (a variable and a function with the same Scribe name never collide). Mangling must be injective; add a test that lowers a corpus and asserts no two Scribe entities share a C name. Emit `#line` so compiler errors and debuggers show Scribe positions.
+Prefix letters keep namespaces disjoint (a variable and a function with the same APIK26 name never collide). Mangling must be injective; add a test that lowers a corpus and asserts no two APIK26 entities share a C name. Emit `#line` so compiler errors and debuggers show APIK26 positions.
 
 ## Runtime templates
 
@@ -42,7 +42,7 @@ Hand-written, reviewed C stored as template files with a deliberately tiny subst
 // templates/array.c.in
 typedef struct { @T@ *data; int64_t len, cap; } @Array@;
 static inline @T@ @Array@__get(const @Array@ *a, int64_t i) {
-    if ((uint64_t)i >= (uint64_t)a->len) scribe_trap_index(i, a->len);
+    if ((uint64_t)i >= (uint64_t)a->len) apik_trap_index(i, a->len);
     return a->data[i];
 }
 ```
@@ -57,21 +57,21 @@ User generics are instantiated in the IR: collect reachable `(function, type-arg
 
 ## Division (implemented)
 
-| Scribe | C |
+| APIK26 | C |
 |---|---|
-| `x / y` (floats) | `scribe_div_f64(v_x, v_y)` (`scribe_div_f32` for f32): ±inf or nan for a zero divisor, without dividing by zero |
+| `x / y` (floats) | `apik_div_f64(v_x, v_y)` (`apik_div_f32` for f32): ±inf or nan for a zero divisor, without dividing by zero |
 | `x / 2.0` | `(v_x / 2.0)`: a nonzero constant divisor is plain C division |
 | `7 / 2` | `(7.0 / 2.0)`: the integer literals are written as floats |
-| `a // b` | `scribe_floordiv_i64(v_a, v_b, site)`: traps on 0 and `INT64_MIN // -1`, then adjusts C's truncating `/` |
-| `a % b` | `scribe_mod_i64(v_a, v_b, site)`: traps on 0, returns 0 for `b == -1`, then adjusts C's `%` |
-| `x // y` (floats) | `scribe_floordiv_f64(v_x, v_y)` (`_f32` for f32): `c = floor(x / y)`, then `c - 1` when `fma(-c, y, x)` has the other sign from `y`; the exact floor |
-| `x % y` (floats) | `scribe_mod_f64(v_x, v_y)` (`_f32` for f32): `fmod`, which is exact, then `+ y` when the signs differ, the one rounding |
+| `a // b` | `apik_floordiv_i64(v_a, v_b, site)`: traps on 0 and `INT64_MIN // -1`, then adjusts C's truncating `/` |
+| `a % b` | `apik_mod_i64(v_a, v_b, site)`: traps on 0, returns 0 for `b == -1`, then adjusts C's `%` |
+| `x // y` (floats) | `apik_floordiv_f64(v_x, v_y)` (`_f32` for f32): `c = floor(x / y)`, then `c - 1` when `fma(-c, y, x)` has the other sign from `y`; the exact floor |
+| `x % y` (floats) | `apik_mod_f64(v_x, v_y)` (`_f32` for f32): `fmod`, which is exact, then `+ y` when the signs differ, the one rounding |
 
 ## Powers (implemented)
 
-| Scribe | C |
+| APIK26 | C |
 |---|---|
-| `n ** 2` (i64) | `scribe_pow_i64(v_n, INT64_C(2), site)`: traps on a negative exponent and on overflow |
+| `n ** 2` (i64) | `apik_pow_i64(v_n, INT64_C(2), site)`: traps on a negative exponent and on overflow |
 | `x ** 0.5` (f64) | `pow(v_x, 0.5)` |
 | `y ** 0.5` (f32) | `powf(v_y, 0.5f)` |
 
@@ -89,7 +89,7 @@ static linking needs them.
 
 ## Functions and errors (proposed)
 
-The calling convention (every function returns a `scribe_err` status and
+The calling convention (every function returns a `apik_err` status and
 writes its result through a pointer), the one-operation-per-statement
 lowering of fallible expressions, and the error exit are specified in
 [functions.md](functions.md#8-evaluation-order-and-lowering) and
@@ -97,7 +97,7 @@ lowering of fallible expressions, and the error exit are specified in
 
 ## Booleans and conditions (implemented)
 
-| Scribe | C |
+| APIK26 | C |
 |---|---|
 | `bool` | `uint8_t` (`<stdint.h>`); every stored value is 0 or 1 |
 | `true`, `false` | `1`, `0`: plain constants, so `while true` is a C constant expression |
@@ -107,7 +107,7 @@ lowering of fallible expressions, and the error exit are specified in
 | `if a < b` | `if (v_a < v_b)`: no doubled parentheses (clang warns on `if ((a == b))`) |
 | `if flag`, `if n` | `if (v_flag)`, `if (v_n != 0)` |
 | `a < b <= c` | `((v_a < v_b) && (v_b <= v_c))` |
-| `a < b + 1 <= c` | `((v_a < (t_1 = scribe_add_i64(v_b, INT64_C(1), 0))) && (t_1 <= v_c))`: a middle operand that is not a name or constant is evaluated once, at its first use |
+| `a < b + 1 <= c` | `((v_a < (t_1 = apik_add_i64(v_b, INT64_C(1), 0))) && (t_1 <= v_c))`: a middle operand that is not a name or constant is evaluated once, at its first use |
 | `bool(n)` | `(v_n != 0)` |
 | `i64(flag)` | `((int64_t)v_flag)` |
 | `print flag` | `puts(v_flag ? "true" : "false");` |
@@ -120,7 +120,7 @@ whole statements, puts its temporaries in a C block of its own instead.)
 
 ### Self-comparisons
 
-`a == a` and `a < a` are valid Scribe: an integer or bool compared with
+`a == a` and `a < a` are valid APIK26: an integer or bool compared with
 itself is always true or always false, and the program prints that. gcc and
 clang warn about the C comparison (`-Wtautological-compare`), and the
 generated C is meant to build without a single warning. So the C statement
@@ -160,18 +160,18 @@ changes how it is built.
 |---|---|---|
 | `--target c` (default) | `cc` through the Makefile/Ninja file | the native terminal |
 | `--target wasm --shell node` | `emcc -sENVIRONMENT=node -sEXIT_RUNTIME=1` | `node prog.js` |
-| `--target wasm --shell web` (default shell) | `emcc -sASYNCIFY -sFORCE_FILESYSTEM -sMODULARIZE -sEXPORT_ES6 --js-library=emscripten-pty.js -DSCRIBE_COLOR_ERRORS` | `index.html`: xterm.js with xterm-pty |
+| `--target wasm --shell web` (default shell) | `emcc -sASYNCIFY -sFORCE_FILESYSTEM -sMODULARIZE -sEXPORT_ES6 --js-library=emscripten-pty.js -DAPIK_COLOR_ERRORS` | `index.html`: xterm.js with xterm-pty |
 
-- **Blocking input in a browser.** A Scribe program reads stdin in the middle
+- **Blocking input in a browser.** An APIK26 program reads stdin in the middle
   of a run. Asyncify lets the WebAssembly pause on that read without blocking
   the page, on the main thread, in every browser, served by plain
   `python -m http.server`. The alternatives were a Worker with
   `SharedArrayBuffer` (needs cross-origin isolation headers) and JSPI (not in
   every browser yet); JSPI may replace Asyncify later.
 - **One C file.** Red runtime errors are a compile-time macro,
-  `SCRIBE_COLOR_ERRORS`, that only the web build defines, so the C stays ISO
+  `APIK_COLOR_ERRORS`, that only the web build defines, so the C stays ISO
   C and identical across targets.
-- **Third-party files** are listed in `scribe_lang/web/assets.json` with their
+- **Third-party files** are listed in `apik26/web/assets.json` with their
   CDN URLs and SRI hashes; `--web-assets vendored` copies them, `cdn` links
   them. Tested with Emscripten 6.0.13, xterm.js 5.5.0 and xterm-pty 0.12.0;
   xterm-pty patches Emscripten internals, so a new Emscripten may need a new
@@ -181,4 +181,4 @@ changes how it is built.
 
 ## Build
 
-The CLI writes Makefile/Ninja files next to the C output (paths relative to the build file). The Makefile replaces `CC` only while it is make's built-in default, so `make CC=...` and an environment `CC` still win. Planned: a `--sanitize` option to build with UBSan/ASan, for CI. Today the test suite builds with UBSan itself (`SCRIBE_SANITIZE=1`).
+The CLI writes Makefile/Ninja files next to the C output (paths relative to the build file). The Makefile replaces `CC` only while it is make's built-in default, so `make CC=...` and an environment `CC` still win. Planned: a `--sanitize` option to build with UBSan/ASan, for CI. Today the test suite builds with UBSan itself (`APIK_SANITIZE=1`).

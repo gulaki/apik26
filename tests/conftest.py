@@ -12,29 +12,29 @@ from typing import NoReturn
 
 import pytest
 
-from scribe_lang.compiler import Compiler
+from apik26.compiler import Compiler
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
 # The tools a test may need. Without one the test skips, unless
-# SCRIBE_REQUIRE (a comma-separated list of these names) includes it: CI
+# APIK_REQUIRE (a comma-separated list of these names) includes it: CI
 # names the tools each job installs, and there a missing tool fails the test,
 # so a green run never means a smaller run.
 TOOLS = ("cc", "ubsan", "make", "node", "emcc")
 
 
 def required_tools() -> set[str]:
-    required = {name.strip() for name in os.environ.get("SCRIBE_REQUIRE", "").split(",") if name.strip()}
+    required = {name.strip() for name in os.environ.get("APIK_REQUIRE", "").split(",") if name.strip()}
     unknown = required - set(TOOLS)
     if unknown:
-        raise pytest.UsageError(f"SCRIBE_REQUIRE: unknown tools {sorted(unknown)}; the tools are {', '.join(TOOLS)}")
+        raise pytest.UsageError(f"APIK_REQUIRE: unknown tools {sorted(unknown)}; the tools are {', '.join(TOOLS)}")
     return required
 
 
 def missing(tool: str, reason: str) -> NoReturn:
-    """Skip the test for lack of `tool`, or fail it if SCRIBE_REQUIRE names it."""
+    """Skip the test for lack of `tool`, or fail it if APIK_REQUIRE names it."""
     if tool in required_tools():
-        pytest.fail(f"{reason}, but SCRIBE_REQUIRE lists {tool}", pytrace=False)
+        pytest.fail(f"{reason}, but APIK_REQUIRE lists {tool}", pytrace=False)
     pytest.skip(reason)
 
 
@@ -63,19 +63,19 @@ def require_cc() -> str:
 
 
 # The random tests have fixed seeds and sizes, so every run checks the same
-# cases. SCRIBE_RANDOM_SCALE multiplies their sizes and SCRIBE_RANDOM_SEED
+# cases. APIK_RANDOM_SCALE multiplies their sizes and APIK_RANDOM_SEED
 # gives them other seeds: the weekly workflow sets both.
 def random_settings() -> tuple[int, int | None]:
     """(scale, seed or None), from the environment."""
     values = {}
-    for name, minimum in (("SCRIBE_RANDOM_SCALE", 1), ("SCRIBE_RANDOM_SEED", 0)):
+    for name, minimum in (("APIK_RANDOM_SCALE", 1), ("APIK_RANDOM_SEED", 0)):
         text = os.environ.get(name, "")
         if not text:
             continue
         if not text.isdigit() or int(text) < minimum:
             raise pytest.UsageError(f"{name} must be a whole number of at least {minimum}, not {text!r}")
         values[name] = int(text)
-    return values.get("SCRIBE_RANDOM_SCALE", 1), values.get("SCRIBE_RANDOM_SEED")
+    return values.get("APIK_RANDOM_SCALE", 1), values.get("APIK_RANDOM_SEED")
 
 
 def random_count(count: int) -> int:
@@ -83,20 +83,20 @@ def random_count(count: int) -> int:
 
 
 def random_seed(seed: int) -> int:
-    """`seed`, or with SCRIBE_RANDOM_SEED a seed made from both."""
+    """`seed`, or with APIK_RANDOM_SEED a seed made from both."""
     extra = random_settings()[1]
     return seed if extra is None else seed * 1_000_003 + extra + 1
 
 
 def pytest_configure(config):
-    required_tools()  # a misspelt SCRIBE_REQUIRE stops the run at once
+    required_tools()  # a misspelt APIK_REQUIRE stops the run at once
     random_settings()
 
 
 def pytest_report_header(config):
     scale, seed = random_settings()
     if scale != 1 or seed is not None:
-        return f"random tests: SCRIBE_RANDOM_SCALE={scale} SCRIBE_RANDOM_SEED={'' if seed is None else seed}"
+        return f"random tests: APIK_RANDOM_SCALE={scale} APIK_RANDOM_SEED={'' if seed is None else seed}"
     return None
 
 STRICT_FLAGS = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra"]
@@ -143,13 +143,13 @@ def require_ubsan() -> list[str]:
 
 
 def extra_flags() -> list[str]:
-    """SCRIBE_SANITIZE=1 builds every end-to-end program with UBSan as well.
+    """APIK_SANITIZE=1 builds every end-to-end program with UBSan as well.
     Asking for it when UBSan cannot be built stops the run."""
-    if os.environ.get("SCRIBE_SANITIZE") != "1":
+    if os.environ.get("APIK_SANITIZE") != "1":
         return []
     flags = ubsan_flags()
     if flags is None:
-        pytest.exit("SCRIBE_SANITIZE=1, but the C compiler cannot build with UBSan", returncode=4)
+        pytest.exit("APIK_SANITIZE=1, but the C compiler cannot build with UBSan", returncode=4)
     return list(flags)
 
 
@@ -187,8 +187,8 @@ def compiler() -> Compiler:
 
 
 @pytest.fixture
-def build_scribe(compiler, tmp_path):
-    """Compile Scribe source to a native binary; returns a function that runs it.
+def build_apik(compiler, tmp_path):
+    """Compile APIK26 source to a native binary; returns a function that runs it.
 
     The generated C is built with strict flags so that non-conforming output
     (for example a label at the end of a block) fails the test. Skipped when
@@ -197,7 +197,7 @@ def build_scribe(compiler, tmp_path):
     require_cc()
 
     def build(source: str, flags: list[str]):
-        result = compiler.compile(source, filename="t.scribe")
+        result = compiler.compile(source, filename="t.apik")
         assert result.ok, result.render()
         c_file = tmp_path / "prog.c"
         c_file.write_text(result.c_source, encoding="utf-8")
@@ -221,11 +221,11 @@ def build_scribe(compiler, tmp_path):
 
 
 @pytest.fixture
-def run_scribe(build_scribe):
-    """Build and run Scribe source; returns its stdout. It must exit with 0."""
+def run_apik(build_apik):
+    """Build and run APIK26 source; returns its stdout. It must exit with 0."""
 
     def run(source: str, stdin: str = "") -> str:
-        proc = build_scribe(source, extra_flags())(stdin)
+        proc = build_apik(source, extra_flags())(stdin)
         assert proc.returncode == 0, proc.stderr
         return proc.stdout
 
@@ -233,16 +233,16 @@ def run_scribe(build_scribe):
 
 
 @pytest.fixture
-def run_trapping(build_scribe):
-    """Build Scribe source with UBSan and run it, expecting a runtime error.
+def run_trapping(build_apik):
+    """Build APIK26 source with UBSan and run it, expecting a runtime error.
 
-    Returns its stderr. A Scribe runtime check must stop the program *before*
+    Returns its stderr. An APIK26 runtime check must stop the program *before*
     any undefined behaviour: if a check is missing, UBSan reports first and
     the stderr no longer matches.
     """
 
     def run(source: str, stdin: str = "") -> str:
-        proc = build_scribe(source, require_ubsan())(stdin)
+        proc = build_apik(source, require_ubsan())(stdin)
         assert proc.returncode != 0, proc.stdout
         return proc.stderr
 
@@ -250,12 +250,12 @@ def run_trapping(build_scribe):
 
 
 @pytest.fixture
-def run_trapping_or_output(build_scribe):
+def run_trapping_or_output(build_apik):
     """Build with UBSan and run; returns (exit status, stdout). For checking
     that a program finishes without reaching a runtime error it guards."""
 
     def run(source: str, stdin: str = "") -> tuple[int, str]:
-        proc = build_scribe(source, require_ubsan())(stdin)
+        proc = build_apik(source, require_ubsan())(stdin)
         return proc.returncode, proc.stdout
 
     return run

@@ -14,7 +14,7 @@ from .semantics import Scope, SemanticModel
 from .types import ScalarType
 
 
-# Scribe names are prefixed in the generated C so that no Scribe name can
+# APIK26 names are prefixed in the generated C so that no APIK26 name can
 # collide with a C keyword, a name from <stdio.h> (`printf`, `EOF`, ...),
 # `main`, or an identifier the C standard reserves (`__x`, `_X`). Variables and
 # labels get different prefixes so the C stays easy to read.
@@ -110,8 +110,8 @@ def _helper(code: str, includes=(), needs=(), libraries=()) -> _Helper:
     return _Helper(tuple(code.strip("\n").split("\n")) + ("",), tuple(includes), tuple(needs), tuple(libraries))
 
 
-# Every check stops the program through scribe_trap, which says where in the
-# Scribe source the check failed; `scribe_sites` (generated) maps the site
+# Every check stops the program through apik_trap, which says where in the
+# APIK26 source the check failed; `apik_sites` (generated) maps the site
 # number each call passes to a "file:line:column" position.
 #
 # The integer checks are plain ISO C comparisons done *before* the operation
@@ -121,36 +121,36 @@ def _helper(code: str, includes=(), needs=(), libraries=()) -> _Helper:
 # Helpers are listed in the order they are emitted; each one only calls
 # helpers above it.
 _HELPERS: dict[str, _Helper] = {
-    "scribe_trap": _helper("""
+    "apik_trap": _helper("""
 /* Stops the program at a failed runtime check. */
-static _Noreturn void scribe_trap(int site, const char *what) {
-#ifdef SCRIBE_COLOR_ERRORS
+static _Noreturn void apik_trap(int site, const char *what) {
+#ifdef APIK_COLOR_ERRORS
     /* Defined by the web shell's build: its stderr is always a terminal. */
-    fprintf(stderr, "\\033[31m%s: runtime error: %s\\033[0m\\n", scribe_sites[site], what);
+    fprintf(stderr, "\\033[31m%s: runtime error: %s\\033[0m\\n", apik_sites[site], what);
 #else
-    fprintf(stderr, "%s: runtime error: %s\\n", scribe_sites[site], what);
+    fprintf(stderr, "%s: runtime error: %s\\n", apik_sites[site], what);
 #endif
     abort();
 }
 """, includes=["stdio.h", "stdlib.h"]),
-    "scribe_add_i64": _helper("""
-static int64_t scribe_add_i64(int64_t a, int64_t b, int site) {
+    "apik_add_i64": _helper("""
+static int64_t apik_add_i64(int64_t a, int64_t b, int site) {
     if ((b > 0 && a > INT64_MAX - b) || (b < 0 && a < INT64_MIN - b)) {
-        scribe_trap(site, "integer overflow");
+        apik_trap(site, "integer overflow");
     }
     return a + b;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
-    "scribe_sub_i64": _helper("""
-static int64_t scribe_sub_i64(int64_t a, int64_t b, int site) {
+""", includes=["stdint.h"], needs=["apik_trap"]),
+    "apik_sub_i64": _helper("""
+static int64_t apik_sub_i64(int64_t a, int64_t b, int site) {
     if ((b < 0 && a > INT64_MAX + b) || (b > 0 && a < INT64_MIN + b)) {
-        scribe_trap(site, "integer overflow");
+        apik_trap(site, "integer overflow");
     }
     return a - b;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
-    "scribe_mul_i64": _helper("""
-static int64_t scribe_mul_i64(int64_t a, int64_t b, int site) {
+""", includes=["stdint.h"], needs=["apik_trap"]),
+    "apik_mul_i64": _helper("""
+static int64_t apik_mul_i64(int64_t a, int64_t b, int site) {
     int overflow;
     if (a > 0) {
         overflow = b > 0 ? a > INT64_MAX / b : b < INT64_MIN / a;
@@ -158,44 +158,44 @@ static int64_t scribe_mul_i64(int64_t a, int64_t b, int site) {
         overflow = b > 0 ? a < INT64_MIN / b : a != 0 && b < INT64_MAX / a;
     }
     if (overflow) {
-        scribe_trap(site, "integer overflow");
+        apik_trap(site, "integer overflow");
     }
     return a * b;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
+""", includes=["stdint.h"], needs=["apik_trap"]),
     # Exponentiation by squaring, every step checked. A double holds integers
     # exactly only up to 2**53, so `pow` would be wrong here. `base` is squared
     # only when a later bit needs it, and then the result is at least as large,
     # so a square that overflows means the result does too.
-    "scribe_pow_i64": _helper("""
-static int64_t scribe_pow_i64(int64_t base, int64_t exp, int site) {
+    "apik_pow_i64": _helper("""
+static int64_t apik_pow_i64(int64_t base, int64_t exp, int site) {
     if (exp < 0) {
-        scribe_trap(site, "negative exponent");
+        apik_trap(site, "negative exponent");
     }
     int64_t result = 1;
     while (exp > 0) {
         if (exp % 2 == 1) {
-            result = scribe_mul_i64(result, base, site);
+            result = apik_mul_i64(result, base, site);
         }
         exp = exp / 2;
         if (exp > 0) {
-            base = scribe_mul_i64(base, base, site);
+            base = apik_mul_i64(base, base, site);
         }
     }
     return result;
 }
-""", includes=["stdint.h"], needs=["scribe_mul_i64", "scribe_trap"]),
+""", includes=["stdint.h"], needs=["apik_mul_i64", "apik_trap"]),
     # `//` and `%` round toward negative infinity, as in Python: C's `/` and
     # `%` truncate, so a nonzero remainder whose sign differs from the
     # divisor's moves one step. INT64_MIN % -1 is undefined in C (the quotient
     # overflows) although the remainder, 0, fits.
-    "scribe_floordiv_i64": _helper("""
-static int64_t scribe_floordiv_i64(int64_t a, int64_t b, int site) {
+    "apik_floordiv_i64": _helper("""
+static int64_t apik_floordiv_i64(int64_t a, int64_t b, int site) {
     if (b == 0) {
-        scribe_trap(site, "division by zero");
+        apik_trap(site, "division by zero");
     }
     if (a == INT64_MIN && b == -1) {
-        scribe_trap(site, "integer overflow");
+        apik_trap(site, "integer overflow");
     }
     int64_t q = a / b;
     if (a % b != 0 && (a < 0) != (b < 0)) {
@@ -203,11 +203,11 @@ static int64_t scribe_floordiv_i64(int64_t a, int64_t b, int site) {
     }
     return q;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
-    "scribe_mod_i64": _helper("""
-static int64_t scribe_mod_i64(int64_t a, int64_t b, int site) {
+""", includes=["stdint.h"], needs=["apik_trap"]),
+    "apik_mod_i64": _helper("""
+static int64_t apik_mod_i64(int64_t a, int64_t b, int site) {
     if (b == 0) {
-        scribe_trap(site, "division by zero");
+        apik_trap(site, "division by zero");
     }
     if (b == -1) {
         return 0;
@@ -218,21 +218,21 @@ static int64_t scribe_mod_i64(int64_t a, int64_t b, int site) {
     }
     return r;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
-    "scribe_neg_i64": _helper("""
-static int64_t scribe_neg_i64(int64_t a, int site) {
+""", includes=["stdint.h"], needs=["apik_trap"]),
+    "apik_neg_i64": _helper("""
+static int64_t apik_neg_i64(int64_t a, int site) {
     if (a == INT64_MIN) {
-        scribe_trap(site, "integer overflow");
+        apik_trap(site, "integer overflow");
     }
     return -a;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
+""", includes=["stdint.h"], needs=["apik_trap"]),
     # Dividing a float by zero is undefined in ISO C unless the compiler
     # implements Annex F (C11 6.5.5p5), so it never happens: a zero divisor
     # gives the IEEE 754 result directly. signbit, isnan, INFINITY and NAN
     # are macros, so this needs no -lm.
-    "scribe_div_f64": _helper("""
-static double scribe_div_f64(double a, double b) {
+    "apik_div_f64": _helper("""
+static double apik_div_f64(double a, double b) {
     if (b == 0.0) {
         if (a == 0.0 || isnan(a)) {
             return NAN;
@@ -242,8 +242,8 @@ static double scribe_div_f64(double a, double b) {
     return a / b;
 }
 """, includes=["math.h"]),
-    "scribe_div_f32": _helper("""
-static float scribe_div_f32(float a, float b) {
+    "apik_div_f32": _helper("""
+static float apik_div_f32(float a, float b) {
     if (b == 0.0f) {
         if (a == 0.0f || isnan(a)) {
             return NAN;
@@ -270,10 +270,10 @@ static float scribe_div_f32(float a, float b) {
     #
     # A nan, an infinite a or a zero b gives the IEEE 754 result directly, so
     # fmod never sees the cases C leaves implementation-defined.
-    "scribe_floordiv_f64": _helper("""
-static double scribe_floordiv_f64(double a, double b) {
+    "apik_floordiv_f64": _helper("""
+static double apik_floordiv_f64(double a, double b) {
     if (isnan(a) || isnan(b) || isinf(a) || b == 0.0) {
-        return scribe_div_f64(a, b);
+        return apik_div_f64(a, b);
     }
     if (isinf(b)) {
         return a != 0.0 && (signbit(a) != 0) != (signbit(b) != 0) ? -1.0 : a / b;
@@ -289,9 +289,9 @@ static double scribe_floordiv_f64(double a, double b) {
     }
     return c;
 }
-""", includes=["math.h"], needs=["scribe_div_f64"], libraries=["m"]),
-    "scribe_mod_f64": _helper("""
-static double scribe_mod_f64(double a, double b) {
+""", includes=["math.h"], needs=["apik_div_f64"], libraries=["m"]),
+    "apik_mod_f64": _helper("""
+static double apik_mod_f64(double a, double b) {
     if (isnan(a) || isnan(b) || isinf(a) || b == 0.0) {
         return NAN;
     }
@@ -305,10 +305,10 @@ static double scribe_mod_f64(double a, double b) {
     return r;
 }
 """, includes=["math.h"], libraries=["m"]),
-    "scribe_floordiv_f32": _helper("""
-static float scribe_floordiv_f32(float a, float b) {
+    "apik_floordiv_f32": _helper("""
+static float apik_floordiv_f32(float a, float b) {
     if (isnan(a) || isnan(b) || isinf(a) || b == 0.0f) {
-        return scribe_div_f32(a, b);
+        return apik_div_f32(a, b);
     }
     if (isinf(b)) {
         return a != 0.0f && (signbit(a) != 0) != (signbit(b) != 0) ? -1.0f : a / b;
@@ -324,9 +324,9 @@ static float scribe_floordiv_f32(float a, float b) {
     }
     return c;
 }
-""", includes=["math.h"], needs=["scribe_div_f32"], libraries=["m"]),
-    "scribe_mod_f32": _helper("""
-static float scribe_mod_f32(float a, float b) {
+""", includes=["math.h"], needs=["apik_div_f32"], libraries=["m"]),
+    "apik_mod_f32": _helper("""
+static float apik_mod_f32(float a, float b) {
     if (isnan(a) || isnan(b) || isinf(a) || b == 0.0f) {
         return NAN;
     }
@@ -343,20 +343,20 @@ static float scribe_mod_f32(float a, float b) {
     # A float -> integer conversion of a value out of range (or NaN) is
     # undefined (C11 6.3.1.4). NaN fails both comparisons; both bounds are
     # powers of two, so they are exact doubles.
-    "scribe_f64_to_i64": _helper("""
-static int64_t scribe_f64_to_i64(double x, int site) {
+    "apik_f64_to_i64": _helper("""
+static int64_t apik_f64_to_i64(double x, int site) {
     if (!(x >= -9223372036854775808.0 && x < 9223372036854775808.0)) {
-        scribe_trap(site, "value out of range for i64");
+        apik_trap(site, "value out of range for i64");
     }
     return (int64_t)x;
 }
-""", includes=["stdint.h"], needs=["scribe_trap"]),
+""", includes=["stdint.h"], needs=["apik_trap"]),
     # A double -> float conversion of a value out of range is undefined (C11
     # 6.3.1.5), so handle those values here, rounding as IEEE 754 does:
     # infinity from FLT_MAX plus half an ulp (0x1.ffffffp+127) upward,
     # FLT_MAX below that.
-    "scribe_f64_to_f32": _helper("""
-static float scribe_f64_to_f32(double x) {
+    "apik_f64_to_f32": _helper("""
+static float apik_f64_to_f32(double x) {
     if (x >= 0x1.ffffffp+127) {
         return INFINITY;
     }
@@ -377,9 +377,9 @@ static float scribe_f64_to_f32(double x) {
     # it with strtoll/strtod/strtof. Anything that is not a number of the
     # variable's type (text, `inf`, `nan`, `1e999`, an over-long token, end of
     # input) reads as 0, and the whole token is always consumed.
-    "scribe_read_token": _helper("""
+    "apik_read_token": _helper("""
 /* Reads one token into buf; returns 0 at end of input or if it does not fit. */
-static int scribe_read_token(char *buf, size_t size) {
+static int apik_read_token(char *buf, size_t size) {
     size_t len = 0;
     int too_long = 0;
     int c = getchar();
@@ -401,11 +401,11 @@ static int scribe_read_token(char *buf, size_t size) {
     return 1;
 }
 """, includes=["ctype.h", "stdio.h"]),
-    "scribe_read_i64": _helper("""
+    "apik_read_i64": _helper("""
 /* Reads one token; returns 0 unless it is a whole number that fits in i64. */
-static int64_t scribe_read_i64(void) {
+static int64_t apik_read_i64(void) {
     char buf[64];
-    if (!scribe_read_token(buf, sizeof buf)) {
+    if (!apik_read_token(buf, sizeof buf)) {
         return 0;
     }
     char *end = buf;
@@ -421,12 +421,12 @@ static int64_t scribe_read_i64(void) {
 #endif
     return (int64_t)value;
 }
-""", includes=["errno.h", "limits.h", "stdint.h", "stdlib.h"], needs=["scribe_read_token"]),
-    "scribe_read_f64": _helper("""
+""", includes=["errno.h", "limits.h", "stdint.h", "stdlib.h"], needs=["apik_read_token"]),
+    "apik_read_f64": _helper("""
 /* Reads one token; returns 0 unless it is a finite f64. */
-static double scribe_read_f64(void) {
+static double apik_read_f64(void) {
     char buf[64];
-    if (!scribe_read_token(buf, sizeof buf)) {
+    if (!apik_read_token(buf, sizeof buf)) {
         return 0;
     }
     char *end = buf;
@@ -437,12 +437,12 @@ static double scribe_read_f64(void) {
     }
     return value;
 }
-""", includes=["errno.h", "math.h", "stdlib.h"], needs=["scribe_read_token"]),
-    "scribe_read_f32": _helper("""
+""", includes=["errno.h", "math.h", "stdlib.h"], needs=["apik_read_token"]),
+    "apik_read_f32": _helper("""
 /* Reads one token; returns 0 unless it is a finite f32. */
-static float scribe_read_f32(void) {
+static float apik_read_f32(void) {
     char buf[64];
-    if (!scribe_read_token(buf, sizeof buf)) {
+    if (!apik_read_token(buf, sizeof buf)) {
         return 0;
     }
     char *end = buf;
@@ -453,7 +453,7 @@ static float scribe_read_f32(void) {
     }
     return value;
 }
-""", includes=["errno.h", "math.h", "stdlib.h"], needs=["scribe_read_token"]),
+""", includes=["errno.h", "math.h", "stdlib.h"], needs=["apik_read_token"]),
 }
 
 def _variables(expr: Expr):
@@ -502,12 +502,12 @@ class _Loop:
 
 
 _CHECKED_I64 = {
-    "+": "scribe_add_i64", "-": "scribe_sub_i64", "*": "scribe_mul_i64",
-    "//": "scribe_floordiv_i64", "%": "scribe_mod_i64", "**": "scribe_pow_i64",
+    "+": "apik_add_i64", "-": "apik_sub_i64", "*": "apik_mul_i64",
+    "//": "apik_floordiv_i64", "%": "apik_mod_i64", "**": "apik_pow_i64",
 }
 # C library functions the emitter calls: name -> (header, library to link).
 _LIBRARY = {"pow": ("math.h", "m"), "powf": ("math.h", "m")}
-_READ = {types.I64: "scribe_read_i64", types.F64: "scribe_read_f64", types.F32: "scribe_read_f32"}
+_READ = {types.I64: "apik_read_i64", types.F64: "apik_read_f64", types.F32: "apik_read_f32"}
 
 
 @dataclass
@@ -595,7 +595,7 @@ class CEmitter:
         lines: list[str] = []
         if self._sites:
             lines.append("/* Source position of each runtime check, by site number. */")
-            lines.append("static const char *const scribe_sites[] = {")
+            lines.append("static const char *const apik_sites[] = {")
             lines += [f"    {c_string_literal(site)}," for site in self._sites]
             lines.append("};")
             lines.append("")
@@ -642,7 +642,7 @@ class CEmitter:
     def _line(self, text: str) -> None:
         indent = " " * (self._indent * self.indent_width)
         if self._self_comparison:
-            # `a == a` is valid Scribe, but gcc and clang warn that the C
+            # `a == a` is valid APIK26, but gcc and clang warn that the C
             # comparison is always true or false. Silence that warning for
             # this statement only (docs/design/lowering.md, "Self-comparisons").
             self._self_comparison = False
@@ -880,7 +880,7 @@ class CEmitter:
             if expr.operator == "+":
                 return operand
             if t.is_integer:
-                return f"{self._use('scribe_neg_i64')}({operand}, {self._site(expr.location)})"
+                return f"{self._use('apik_neg_i64')}({operand}, {self._site(expr.location)})"
             return f"(-{operand})"
         if isinstance(expr, Binary):
             left = self._operand(expr.left, t)
@@ -894,11 +894,11 @@ class CEmitter:
                 function = self._library("powf" if t == types.F32 else "pow")
                 return f"{function}({_without_outer_parentheses(left)}, {_without_outer_parentheses(right)})"
             if expr.operator in ("//", "%"):
-                name = "scribe_floordiv" if expr.operator == "//" else "scribe_mod"
+                name = "apik_floordiv" if expr.operator == "//" else "apik_mod"
                 helper = self._use(f"{name}_f32" if t == types.F32 else f"{name}_f64")
                 return f"{helper}({_without_outer_parentheses(left)}, {_without_outer_parentheses(right)})"
             if expr.operator == "/" and not self._nonzero_constant(expr.right):
-                helper = self._use("scribe_div_f32" if t == types.F32 else "scribe_div_f64")
+                helper = self._use("apik_div_f32" if t == types.F32 else "apik_div_f64")
                 return f"{helper}({_without_outer_parentheses(left)}, {_without_outer_parentheses(right)})"
             return f"({left} {expr.operator} {right})"
         if isinstance(expr, Cast):
@@ -944,7 +944,7 @@ class CEmitter:
             # f32 -> f64 is exact.
             return f"(({self._c_type(target)}){operand})"
         if target == types.F32:
-            return f"{self._use('scribe_f64_to_f32')}({operand})"
+            return f"{self._use('apik_f64_to_f32')}({operand})"
         if target.is_integer and source.is_float:
-            return f"{self._use('scribe_f64_to_i64')}({operand}, {self._site(expr.location)})"
+            return f"{self._use('apik_f64_to_i64')}({operand}, {self._site(expr.location)})"
         raise TypeError(f"Unsupported cast from {source} to {target}")

@@ -5,7 +5,7 @@ body:
   - type: textarea
     id: source
     attributes:
-      label: Scribe program
+      label: APIK26 program
       description: The smallest program that shows the problem.
       render: text
     validations:
@@ -20,8 +20,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: scribe --version
-      placeholder: scribe 0.6.2
+      label: apik26 --version
+      placeholder: apik26 0.6.2
     validations:
       required: true
   - type: input

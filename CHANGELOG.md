@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Scribe: the language, the `scribe` command and the C
+All notable changes to APIK26: the language, the `apik26` command and the C
 it generates. The language as it is now is described in
 [`docs/language.md`](docs/language.md). The current version is in
 [`VERSION.txt`](VERSION.txt).
@@ -26,6 +26,23 @@ requests; only 0.0.1 and 0.1.0 were named at the time. The roadmap's stages (M1,
 numbers.
 
 ## Unreleased
+
+### Changed
+
+- The language is renamed **APIK26**, a codename until it has a permanent
+  name. Everything that carried the old name Scribe changes:
+  - the command is `apik26` (was `scribe`), and `apik26 --version` prints
+    `apik26 X.Y.Z`;
+  - the Python package and the pip distribution are `apik26` (was
+    `scribe_lang` and `scribe-lang`), so `python -m apik26.cli`;
+  - source files end in `.apik` (was `.scribe`);
+  - the generated C names its helpers `apik_*` (was `scribe_*`) and its
+    macros `APIK_*`, such as `-DAPIK_COLOR_ERRORS`;
+  - the web shell is `apik-term.js` and `apik-term.css`, its theme is kept
+    under `apik-term-theme`, and the folder marker is `.apik-wasm`;
+  - the test settings are `APIK_REQUIRE`, `APIK_SANITIZE`,
+    `APIK_RANDOM_SCALE` and `APIK_RANDOM_SEED`;
+  - the repository is `gulaki/apik26`.
 
 ### Fixed
 

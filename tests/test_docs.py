@@ -3,10 +3,10 @@
 Code blocks in README.md, docs/ and examples/README.md are checked by their
 fence tag:
 
-```scribe        must compile with no diagnostics. If an ```output block
+```apik        must compile with no diagnostics. If an ```output block
                  follows it directly, the program is built and run, and its
                  stdout must match. A first line `# stdin: 5\\n3` gives it input.
-```scribe-error  must be rejected with exactly the diagnostics its
+```apik-error  must be rejected with exactly the diagnostics its
                  `# expect: <code> at <line>:<column>` lines list.
 
 Proposed syntax that does not compile yet goes in untagged or ```text blocks.
@@ -48,25 +48,25 @@ def snippets(tag: str):
                 yield pytest.param(body, following, id=f"{path.relative_to(ROOT)}:{line}")
 
 
-@pytest.mark.parametrize("source, following", list(snippets("scribe")))
-def test_scribe_snippet_compiles(compiler, source, following):
+@pytest.mark.parametrize("source, following", list(snippets("apik")))
+def test_apik_snippet_compiles(compiler, source, following):
     result = compiler.compile(source)
     assert result.diagnostics == (), result.render()
 
 
 @pytest.mark.parametrize("source, following", [
-    p for p in snippets("scribe") if p.values[1] is not None and p.values[1][0] == "output"
+    p for p in snippets("apik") if p.values[1] is not None and p.values[1][0] == "output"
 ])
-def test_scribe_snippet_prints_its_output(run_scribe, source, following):
+def test_apik_snippet_prints_its_output(run_apik, source, following):
     stdin = ""
     first = source.split("\n", 1)[0]
     if first.startswith("# stdin:"):
         stdin = first.removeprefix("# stdin:").strip().replace("\\n", "\n") + "\n"
-    assert run_scribe(source, stdin) == following[1]
+    assert run_apik(source, stdin) == following[1]
 
 
-@pytest.mark.parametrize("source, following", list(snippets("scribe-error")))
-def test_scribe_error_snippet_reports_the_expected_errors(compiler, source, following):
+@pytest.mark.parametrize("source, following", list(snippets("apik-error")))
+def test_apik_error_snippet_reports_the_expected_errors(compiler, source, following):
     expected = expected_diagnostics(source)
     assert expected, "list the expected errors as '# expect: <code> at <line>:<column>'"
     result = compiler.compile(source)
@@ -97,7 +97,7 @@ def test_relative_links_point_to_existing_files(path):
 
 
 def test_language_reference_lists_every_reserved_word():
-    from scribe_lang.semantics import RESERVED_WORDS
+    from apik26.semantics import RESERVED_WORDS
 
     text = (ROOT / "docs" / "language.md").read_text(encoding="utf-8")
     section = text.split("## Reserved words", 1)[1].split("\n## ", 1)[0]

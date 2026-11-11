@@ -1,14 +1,14 @@
 """Explicit declarations: `i64: a, b = 5` (docs/design/type-system.md)."""
-from scribe_lang.types import F32, F64, I64
+from apik26.types import F32, F64, I64
 
 
 def codes(compiler, source):
     return [d.code.code for d in compiler.compile(source).diagnostics]
 
 
-def test_declared_variables_start_at_zero_unless_initialised(run_scribe):
-    assert run_scribe("i64: a, b = 5\nprint a\nprint b\n") == "0\n5\n"
-    assert run_scribe("f64: x, y = 2.5\nf32: z\nprint x\nprint y\nprint z\n") == "0.00\n2.50\n0.00\n"
+def test_declared_variables_start_at_zero_unless_initialised(run_apik):
+    assert run_apik("i64: a, b = 5\nprint a\nprint b\n") == "0\n5\n"
+    assert run_apik("f64: x, y = 2.5\nf32: z\nprint x\nprint y\nprint z\n") == "0.00\n2.50\n0.00\n"
 
 
 def test_declared_types(compiler):
@@ -23,8 +23,8 @@ def test_initialiser_follows_the_assignment_rules(compiler):
     assert codes(compiler, "f32: f = 16777217\n") == ["E0401"]
 
 
-def test_later_declarators_see_earlier_ones(run_scribe):
-    assert run_scribe("i64: a = 1, b = a + 1\nprint b\n") == "2\n"
+def test_later_declarators_see_earlier_ones(run_apik):
+    assert run_apik("i64: a = 1, b = a + 1\nprint b\n") == "2\n"
 
 
 def test_initialiser_cannot_read_the_variable_it_declares(compiler):
@@ -36,9 +36,9 @@ def test_a_declared_variable_keeps_its_type(compiler):
     assert codes(compiler, "i64: n\nn = 0.5\n") == ["E0501"]
 
 
-def test_input_reads_the_declared_type(run_scribe):
-    assert run_scribe("i64: n\ninput n\nprint n\n", "42\n") == "42\n"
-    assert run_scribe("f32: f\ninput f\nprint f\n", "1.5\n") == "1.50\n"
+def test_input_reads_the_declared_type(run_apik):
+    assert run_apik("i64: n\ninput n\nprint n\n", "42\n") == "42\n"
+    assert run_apik("f32: f\ninput f\nprint f\n", "1.5\n") == "1.50\n"
 
 
 def test_redeclaring_a_visible_variable_is_an_error(compiler):
@@ -50,8 +50,8 @@ def test_redeclaring_a_visible_variable_is_an_error(compiler):
     assert codes(compiler, "x = 1\n{\n    f64: x\n}\n") == ["E0203"]
 
 
-def test_sibling_blocks_can_declare_the_same_name(run_scribe):
-    assert run_scribe("{\n    i64: t = 1\n    print t\n}\n{\n    f64: t = 2\n    print t\n}\n") == "1\n2.00\n"
+def test_sibling_blocks_can_declare_the_same_name(run_apik):
+    assert run_apik("{\n    i64: t = 1\n    print t\n}\n{\n    f64: t = 2\n    print t\n}\n") == "1\n2.00\n"
 
 
 def test_declaring_a_reserved_word_is_an_error(compiler):
@@ -59,13 +59,13 @@ def test_declaring_a_reserved_word_is_an_error(compiler):
     assert codes(compiler, "i64: u8\n") == ["E0202"]
 
 
-def test_a_declaration_resets_the_variable_every_time_it_runs(run_scribe):
+def test_a_declaration_resets_the_variable_every_time_it_runs(run_apik):
     # In a loop body the block is entered afresh; after a backward goto the
     # same declaration runs again. Either way the variable starts at 0.
     loop = "i = 0\nwhile i < 3 {\n    i64: count\n    count = count + 1\n    print count\n    i = i + 1\n}\n"
-    assert run_scribe(loop) == "1\n1\n1\n"
+    assert run_apik(loop) == "1\n1\n1\n"
     backward = "n = 0\nlabel again\ni64: x\nx = x + 1\nn = n + 1\nif n < 3 {\n    goto again\n}\nprint x\n"
-    assert run_scribe(backward) == "1\n"
+    assert run_apik(backward) == "1\n"
 
 
 def test_declaration_emits_an_assignment(compiler):

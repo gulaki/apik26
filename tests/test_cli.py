@@ -1,37 +1,37 @@
 import json
 
 from conftest import EXAMPLES
-from scribe_lang import cli
-from scribe_lang.cli import main
+from apik26 import cli
+from apik26.cli import main
 
 
 def test_cli_compiles_an_example(tmp_path):
     out = tmp_path / "out.c"
-    assert main([str(EXAMPLES / "scopes.scribe"), "-o", str(out)]) == 0
+    assert main([str(EXAMPLES / "scopes.apik"), "-o", str(out)]) == 0
     assert "int main(void)" in out.read_text(encoding="utf-8")
 
 
 def test_cli_prints_the_ast(tmp_path, capsys):
     out = tmp_path / "out.c"
-    assert main([str(EXAMPLES / "classify.scribe"), "-o", str(out), "--ast"]) == 0
+    assert main([str(EXAMPLES / "classify.apik"), "-o", str(out), "--ast"]) == 0
     assert "Elif(" in capsys.readouterr().out
 
 
 def test_cli_reports_semantic_errors(tmp_path, capsys):
-    src = tmp_path / "bad.scribe"
+    src = tmp_path / "bad.apik"
     src.write_text("{\n    y = 1\n}\nprint y\n", encoding="utf-8")
     assert main([str(src), "-o", str(tmp_path / "o.c")]) == 1
     assert "undeclared variable 'y'" in capsys.readouterr().err
 
 
 def test_cli_reports_syntax_errors_for_the_old_keywords(tmp_path, capsys):
-    src = tmp_path / "old.scribe"
+    src = tmp_path / "old.apik"
     src.write_text("if 1 > 0 then\n    print 1\nendif\n", encoding="utf-8")
     assert main([str(src), "-o", str(tmp_path / "o.c")]) == 1
     assert "unexpected name 'then'" in capsys.readouterr().err
 
 
-def write(tmp_path, text, name="prog.scribe"):
+def write(tmp_path, text, name="prog.apik"):
     src = tmp_path / name
     src.write_text(text, encoding="utf-8")
     return src
@@ -67,13 +67,13 @@ def test_cli_json_diagnostics(tmp_path, capsys):
 
 
 def test_cli_missing_source_file(tmp_path, capsys):
-    missing = tmp_path / "missing.scribe"
+    missing = tmp_path / "missing.apik"
     assert main([str(missing), "-o", str(tmp_path / "o.c")]) == 1
     assert capsys.readouterr().err.startswith(f"{missing}: error[E0002]: cannot read {missing}: No such file")
 
 
 def test_cli_source_that_is_not_utf8(tmp_path, capsys):
-    src = tmp_path / "latin1.scribe"
+    src = tmp_path / "latin1.apik"
     src.write_bytes(b'print "\xe9"\n')
     assert main([str(src), "-o", str(tmp_path / "o.c")]) == 1
     assert "error[E0002]" in capsys.readouterr().err

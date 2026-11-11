@@ -6,11 +6,11 @@ up once a real C compiler gets involved.
 """
 import pytest
 
-from scribe_lang.build import BUILD_SYSTEMS, BuildConfig
-from scribe_lang.cli import main
-from scribe_lang.diagnostics import Diagnostics
-from scribe_lang.errors import ParseError
-from scribe_lang.parser import Parser
+from apik26.build import BUILD_SYSTEMS, BuildConfig
+from apik26.cli import main
+from apik26.diagnostics import Diagnostics
+from apik26.errors import ParseError
+from apik26.parser import Parser
 
 
 def c_source(compiler, source):
@@ -19,33 +19,33 @@ def c_source(compiler, source):
 
 # -- Bug 1: number literals were emitted as C `int` literals ----------------
 # `7` was emitted as the C int `7`, so arithmetic on literals used C `int`
-# rules and could overflow, which is undefined. Literals now get a Scribe type
+# rules and could overflow, which is undefined. Literals now get an APIK26 type
 # (i64 or f64, see docs/design/type-system.md) and integer constant
 # expressions are folded exactly, so C never does arithmetic on a bare literal.
 
-def test_division_of_float_literals_is_float_division(run_scribe):
-    assert run_scribe("print 7.0 / 2\n") == "3.50\n"
+def test_division_of_float_literals_is_float_division(run_apik):
+    assert run_apik("print 7.0 / 2\n") == "3.50\n"
 
 
-def test_literal_division_by_zero_is_rejected_not_undefined(compiler, run_scribe):
+def test_literal_division_by_zero_is_rejected_not_undefined(compiler, run_apik):
     assert [d.code.code for d in compiler.compile("print 1 // 0\n").diagnostics] == ["E0504"]
-    assert run_scribe("print 1.0 / 0\n") == "inf\n"
-    assert run_scribe("print 1 / 0\n") == "inf\n"  # `/` divides floats
+    assert run_apik("print 1.0 / 0\n") == "inf\n"
+    assert run_apik("print 1 / 0\n") == "inf\n"  # `/` divides floats
 
 
-def test_literal_multiplication_does_not_overflow_int(run_scribe):
-    assert run_scribe("print 65536 * 65536\n") == "4294967296\n"
+def test_literal_multiplication_does_not_overflow_int(run_apik):
+    assert run_apik("print 65536 * 65536\n") == "4294967296\n"
 
 
-def test_literal_wider_than_any_c_integer(compiler, run_scribe):
+def test_literal_wider_than_any_c_integer(compiler, run_apik):
     assert [d.code.code for d in compiler.compile("print 99999999999999999999\n").diagnostics] == ["E0401"]
-    assert run_scribe("print 99999999999999999999.0\n") == "100000000000000000000.00\n"
+    assert run_apik("print 99999999999999999999.0\n") == "100000000000000000000.00\n"
 
 
-def test_comparison_of_literals_uses_their_values(run_scribe):
-    assert run_scribe('if 7.0 / 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "float\n"
-    assert run_scribe('if 7 / 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "float\n"
-    assert run_scribe('if 7 // 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "int\n"
+def test_comparison_of_literals_uses_their_values(run_apik):
+    assert run_apik('if 7.0 / 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "float\n"
+    assert run_apik('if 7 / 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "float\n"
+    assert run_apik('if 7 // 2 == 3 {\n    print "int"\n} else {\n    print "float"\n}\n') == "int\n"
 
 
 @pytest.mark.parametrize("literal, expected", [("7", "INT64_C(7)"), ("0", "INT64_C(0)"), ("2.5", "2.5"), ("2.5f", "2.5f")])
@@ -65,8 +65,8 @@ def test_largest_float_literal_is_accepted(compiler):
 
 # -- Bug 2: string `print` used the text as a printf format string ----------
 
-def test_percent_signs_in_strings_are_printed_literally(run_scribe):
-    assert run_scribe('print "100% done %s %n %d"\n') == "100% done %s %n %d\n"
+def test_percent_signs_in_strings_are_printed_literally(run_apik):
+    assert run_apik('print "100% done %s %n %d"\n') == "100% done %s %n %d\n"
 
 
 def test_string_print_does_not_go_through_printf(compiler):
@@ -78,8 +78,8 @@ def test_string_print_does_not_go_through_printf(compiler):
 # -- Bug 3: non-ASCII string text was double-encoded ------------------------
 # `unicode_escape` decodes the UTF-8 bytes as Latin-1, so "é" became "Ã©".
 
-def test_non_ascii_strings_round_trip(run_scribe):
-    assert run_scribe('print "héllo ✓ 日本"\n') == "héllo ✓ 日本\n"
+def test_non_ascii_strings_round_trip(run_apik):
+    assert run_apik('print "héllo ✓ 日本"\n') == "héllo ✓ 日本\n"
 
 
 def test_non_ascii_string_is_decoded_once():
@@ -96,18 +96,18 @@ def test_non_ascii_text_is_emitted_as_escapes(compiler):
 
 # -- Bug 4: `\r` escapes and `??` sequences broke the C string literal ------
 
-def test_carriage_return_and_tab_escapes(compiler, run_scribe):
+def test_carriage_return_and_tab_escapes(compiler, run_apik):
     # A raw carriage return inside a C string literal ended the line, so the
-    # C did not compile. (run_scribe reads stdout in text mode, which turns
+    # C did not compile. (run_apik reads stdout in text mode, which turns
     # the `\r` into `\n`, hence the C-level check too.)
     program = 'print "a\\rb\\tc"\n'
     assert 'puts("a\\rb\\tc");' in c_source(compiler, program)
-    assert run_scribe(program) == "a\nb\tc\n"
+    assert run_apik(program) == "a\nb\tc\n"
 
 
-def test_trigraph_like_text_is_printed_unchanged(run_scribe):
+def test_trigraph_like_text_is_printed_unchanged(run_apik):
     # Under -std=c11 a C compiler replaces `??/` with `\`.
-    assert run_scribe('print "what??/ ??= ??!"\n') == "what??/ ??= ??!\n"
+    assert run_apik('print "what??/ ??= ??!"\n') == "what??/ ??= ??!\n"
 
 
 @pytest.mark.parametrize("escape, expected", [
@@ -117,41 +117,41 @@ def test_every_string_escape_decodes(escape, expected):
     assert Parser().parse(f'print "{escape}"\n').statements[0].value == expected
 
 
-def test_escaped_backslash_followed_by_n_is_not_a_newline(run_scribe):
-    assert run_scribe('print "a\\\\nb"\n') == "a\\nb\n"
+def test_escaped_backslash_followed_by_n_is_not_a_newline(run_apik):
+    assert run_apik('print "a\\\\nb"\n') == "a\\nb\n"
 
 
-# -- Bug 5: Scribe names collided with C keywords and <stdio.h> names -------
+# -- Bug 5: APIK26 names collided with C keywords and <stdio.h> names -------
 # Names were emitted verbatim, so `int = 1` declared `float int;`.
 
 @pytest.mark.parametrize("name", [
     "int", "float", "return", "main", "printf", "puts", "scanf", "stdin",
     "EOF", "NULL", "FILE", "__x", "_X",
 ])
-def test_variables_named_like_c_identifiers_work(run_scribe, name):
-    assert run_scribe(f"{name} = 3\nprint {name} + 1\n") == "4\n"
+def test_variables_named_like_c_identifiers_work(run_apik, name):
+    assert run_apik(f"{name} = 3\nprint {name} + 1\n") == "4\n"
 
 
 @pytest.mark.parametrize("name", ["EOF", "int", "main", "BUFSIZ", "L_tmpnam"])
-def test_labels_named_like_c_identifiers_work(run_scribe, name):
+def test_labels_named_like_c_identifiers_work(run_apik, name):
     program = f'goto {name}\nprint "skipped"\nlabel {name}\nprint "after"\n'
-    assert run_scribe(program) == "after\n"
+    assert run_apik(program) == "after\n"
 
 
-def test_block_variable_named_like_a_c_identifier_works(run_scribe):
-    assert run_scribe("{\n    short = 2.0\n    input double\n    print short * double\n}\n", "5\n") == "10.00\n"
+def test_block_variable_named_like_a_c_identifier_works(run_apik):
+    assert run_apik("{\n    short = 2.0\n    input double\n    print short * double\n}\n", "5\n") == "10.00\n"
 
 
-def test_variable_and_label_with_the_same_name(run_scribe):
+def test_variable_and_label_with_the_same_name(run_apik):
     program = "x = 0\nlabel x\nx = x + 1\nif x < 3 {\n    goto x\n}\nprint x\n"
-    assert run_scribe(program) == "3\n"
+    assert run_apik(program) == "3\n"
 
 
 # -- Bug 6: build files pointed at the wrong paths --------------------------
 
 def test_cli_writes_the_build_file_next_to_the_c_file(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    src = tmp_path / "prog.scribe"
+    src = tmp_path / "prog.apik"
     src.write_text("print 1\n", encoding="utf-8")
     (tmp_path / "out").mkdir()
     assert main([str(src), "-o", "out/prog.c", "--build", "make"]) == 0
@@ -169,14 +169,14 @@ def test_build_file_paths_are_relative_to_the_build_file(tmp_path, system):
     assert "../bin/prog" in text
 
 
-def test_generated_makefile_builds_the_program(tmp_path, run_scribe):
-    # run_scribe is only requested so the test skips without a C compiler.
+def test_generated_makefile_builds_the_program(tmp_path, run_apik):
+    # run_apik is only requested so the test skips without a C compiler.
     import subprocess
 
     from conftest import require_tool
 
     require_tool("make")
-    src = tmp_path / "prog.scribe"
+    src = tmp_path / "prog.apik"
     src.write_text('print "built"\n', encoding="utf-8")
     out = tmp_path / "gen" / "prog.c"
     out.parent.mkdir()
@@ -205,9 +205,9 @@ def test_parse_error_without_filename_reads_cleanly():
 
 
 def test_parse_error_with_filename():
-    diags = Diagnostics("f.scribe")
+    diags = Diagnostics("f.apik")
     Parser().parse("x = \n", diags)
-    assert [(x.span.filename, x.span.line, x.span.column) for x in diags] == [("f.scribe", 1, 5)]
+    assert [(x.span.filename, x.span.line, x.span.column) for x in diags] == [("f.apik", 1, 5)]
 
 
 def test_parse_error_at_end_of_input_names_it():
@@ -227,7 +227,7 @@ READ_AND_PRINT = "input a\ninput b\nprint a\nprint b\n"
     ("  7   \n\n 8\n", "7.00\n8.00\n"),               # any whitespace separates tokens
     ("1e999\n3\n", "0.00\n3.00\n"),                     # out of range: was undefined
     ("-1e999\n3\n", "0.00\n3.00\n"),
-    ("nan\n3\n", "0.00\n3.00\n"),                       # non-finite is not a Scribe number
+    ("nan\n3\n", "0.00\n3.00\n"),                       # non-finite is not an APIK26 number
     ("inf\n3\n", "0.00\n3.00\n"),
     ("abc\n4\n", "0.00\n4.00\n"),                       # bad token consumed, next one read
     ("12abc\n4\n", "0.00\n4.00\n"),                     # trailing junk rejects the whole token
@@ -235,12 +235,12 @@ READ_AND_PRINT = "input a\ninput b\nprint a\nprint b\n"
     ("", "0.00\n0.00\n"),                               # end of input
     ("6", "6.00\n0.00\n"),                              # no trailing newline
 ])
-def test_input_never_misreads_or_overflows(run_scribe, stdin, expected):
-    assert run_scribe(READ_AND_PRINT, stdin) == expected
+def test_input_never_misreads_or_overflows(run_apik, stdin, expected):
+    assert run_apik(READ_AND_PRINT, stdin) == expected
 
 
 def test_input_helper_only_emitted_when_used(compiler):
-    assert "scribe_read" not in c_source(compiler, "print 1\n")
+    assert "apik_read" not in c_source(compiler, "print 1\n")
     assert "scanf" not in c_source(compiler, "input x\n")
 
 
@@ -260,7 +260,7 @@ def test_generated_c_builds_without_any_warning(compiler, tmp_path):
     from conftest import EXAMPLES, require_cc
 
     C_COMPILER = require_cc()
-    for example in sorted(EXAMPLES.glob("*.scribe")):
+    for example in sorted(EXAMPLES.glob("*.apik")):
         c_file = tmp_path / f"{example.stem}.c"
         result = compiler.compile(example.read_text(encoding="utf-8"))
         c_file.write_text(result.c_source, encoding="utf-8")
