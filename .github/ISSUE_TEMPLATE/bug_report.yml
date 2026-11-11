@@ -21,7 +21,7 @@ body:
     id: version
     attributes:
       label: apik26 --version
-      placeholder: apik26 0.6.2
+      placeholder: apik26 0.7.0
     validations:
       required: true
   - type: input

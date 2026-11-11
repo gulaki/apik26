@@ -25,7 +25,9 @@ requests; only 0.0.1 and 0.1.0 were named at the time. The roadmap's stages (M1,
 [`docs/whitepaper.md`](docs/whitepaper.md#4-roadmap)) are plans, not version
 numbers.
 
-## Unreleased
+## 0.7.0 - 2026-11-11
+
+Pull requests #20 and #23.
 
 ### Changed
 
