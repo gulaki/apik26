@@ -1,8 +1,8 @@
 # The whole test suite on every pull request and every push to main, on
 # Linux (gcc and clang), macOS, Windows (MinGW-w64 gcc) and WebAssembly
 # (Emscripten and node). Each job names in APIK_REQUIRE the tools it
-# installs, so a test that needs one fails instead of skipping. A
-# windows-msvc job tries Microsoft's cl too, without failing the run yet.
+# installs, so a test that needs one fails instead of skipping. The
+# windows-msvc job builds with Microsoft's cl.
 #
 # The weekly workflow calls it with `latest: true` (the newest runner images
 # and Emscripten) and with more, reseeded, random cases.
@@ -118,12 +118,11 @@ jobs:
       - run: emcc --version
       - run: python -m pytest -ra tests/test_wasm.py
 
-  # Exploratory, not a required check yet: the suite with Microsoft's cl.
-  # There is no UBSan for cl, and no make on the runner, so those tests skip.
+  # The suite with Microsoft's cl. There is no UBSan for cl, and the build
+  # files --build writes use gcc-style flags, so those tests skip.
   windows-msvc:
     runs-on: ${{ inputs.latest && 'windows-latest' || 'windows-2025' }}
     timeout-minutes: 30
-    continue-on-error: true
     env:
       CC: cl
       APIK_REQUIRE: cc,node

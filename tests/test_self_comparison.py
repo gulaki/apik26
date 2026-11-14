@@ -3,7 +3,8 @@ APIK26, but gcc and clang warn that the C comparison is always true or
 false (-Wtautological-compare). The generated C must build without
 warnings, so the statement that holds such a comparison, and only that one,
 is wrapped in `#pragma GCC diagnostic` lines (docs/design/lowering.md,
-"Self-comparisons"). A float compared with itself is a NaN test, and C
+"Self-comparisons"), which only compilers that define __GNUC__ see: MSVC
+warns about a pragma it does not know. A float compared with itself is a NaN test, and C
 compilers do not warn about it."""
 import pytest
 
@@ -12,6 +13,8 @@ from conftest import werror_flags
 PUSH = "#pragma GCC diagnostic push"
 IGNORE = '#pragma GCC diagnostic ignored "-Wtautological-compare"'
 POP = "#pragma GCC diagnostic pop"
+IF_GNUC = "#if defined(__GNUC__)"
+ENDIF = "#endif"
 
 
 def pragma_lines(c_source):
@@ -31,8 +34,10 @@ def test_the_statement_with_a_self_comparison_is_wrapped(compiler, source):
     c = compiler.compile(source).c_source
     lines = [line.strip() for line in c.splitlines()]
     assert pragma_lines(c) == [PUSH, IGNORE, POP]
-    start = lines.index(PUSH)
-    assert lines[start + 1] == IGNORE and lines[start + 3] == POP  # exactly one statement inside
+    start = lines.index(IF_GNUC)
+    # Exactly one statement inside, and the pragmas only for gcc and clang.
+    assert lines[start:start + 4] == [IF_GNUC, PUSH, IGNORE, ENDIF]
+    assert lines[start + 5:start + 8] == [IF_GNUC, POP, ENDIF]
 
 
 @pytest.mark.parametrize("source", [

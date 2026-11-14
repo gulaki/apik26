@@ -129,15 +129,21 @@ that holds such a comparison, and only that statement, turns the warning
 off and back on:
 
 ```c
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
     puts((v_a == v_a) ? "true" : "false");
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
 ```
 
-gcc and clang (and so Emscripten) both read `#pragma GCC diagnostic`; the C
-standard has other compilers ignore a pragma they do not recognise (C11
-6.10.6), so the C stays strictly conforming. The warning stays on everywhere
+gcc and clang (and so Emscripten) both read `#pragma GCC diagnostic`, and
+both define `__GNUC__`. The C standard has other compilers ignore a pragma
+they do not recognise (C11 6.10.6), so the C would be strictly conforming
+either way, but MSVC warns about one (C4068); the `#if` keeps it from
+seeing them, and MSVC does not warn about the comparison itself. The warning stays on everywhere
 else, where an always-true comparison could point at a mistake in the
 compiler. A float compared with itself is not wrapped: `x == x` is false
 for NaN, and compilers do not warn about it.
