@@ -100,6 +100,28 @@ def pytest_report_header(config):
     return None
 
 STRICT_FLAGS = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra"]
+
+
+def is_msvc(compiler: str | None) -> bool:
+    """True for Microsoft's cl, which takes /flags instead of gcc's."""
+    return compiler is not None and Path(compiler).stem.lower() == "cl"
+
+
+# The same strictness for cl: C11, and its highest warning level that is
+# not mostly about the system headers. Like -Wall, /W4 warns without failing.
+MSVC_STRICT_FLAGS = ["/nologo", "/std:c11", "/W4"]
+
+
+def c_build_command(c_file: Path, exe: Path, flags=(), libraries=(), werror: bool = False) -> list[str]:
+    """The command that builds `c_file` into `exe` with the strict flags,
+    for gcc-style compilers or for cl. `werror` turns warnings into errors."""
+    if is_msvc(C_COMPILER):
+        # cl writes the object file to the current folder unless told where,
+        # and its C library holds the maths functions (there is no -lm).
+        return [C_COMPILER, *MSVC_STRICT_FLAGS, *(["/WX"] if werror else []), *flags,
+                f"/Fe{exe}", f"/Fo{Path(exe).with_suffix('.obj')}", str(c_file)]
+    return [C_COMPILER, *STRICT_FLAGS, *(["-Werror"] if werror else []), *flags, "-o", str(exe), str(c_file),
+            *(f"-l{lib}" for lib in libraries)]
 # Any undefined behaviour the generated C reaches stops the program with a
 # sanitizer report (and a nonzero exit) instead of going unnoticed.
 UBSAN_RUNTIME = ("-fsanitize=undefined", "-fno-sanitize-recover=all")
@@ -124,7 +146,8 @@ def ubsan_flags() -> tuple[str, ...] | None:
     """The UBSan flags this C compiler can link: with the runtime if it can,
     else in trap mode, else None. Probed once, the first time a test builds
     with UBSan, so a run that builds nothing pays nothing."""
-    if C_COMPILER is None:
+    if C_COMPILER is None or is_msvc(C_COMPILER):
+        # cl has no UBSan, and only warns about the gcc flags it does not know.
         return None
     for flags in (UBSAN_RUNTIME, UBSAN_TRAP):
         if _links(flags):
@@ -203,11 +226,11 @@ def build_apik(compiler, tmp_path):
         c_file.write_text(result.c_source, encoding="utf-8")
         exe = tmp_path / ("prog.exe" if os.name == "nt" else "prog")
         build = subprocess.run(
-            [C_COMPILER, *STRICT_FLAGS, *flags, "-o", str(exe), str(c_file),
-             *(f"-l{lib}" for lib in result.link_libraries)],
+            c_build_command(c_file, exe, flags, result.link_libraries),
             capture_output=True, text=True,
         )
-        assert build.returncode == 0, f"{build.stderr}\n--- generated C ---\n{result.c_source}"
+        # cl reports errors on stdout.
+        assert build.returncode == 0, f"{build.stderr}{build.stdout}\n--- generated C ---\n{result.c_source}"
 
         def run(stdin: str):
             # The program writes UTF-8; the locale encoding (cp1252 on

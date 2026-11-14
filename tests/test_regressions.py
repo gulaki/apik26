@@ -257,19 +257,19 @@ def test_conditions_have_a_single_pair_of_parentheses(compiler):
 def test_generated_c_builds_without_any_warning(compiler, tmp_path):
     import subprocess
 
-    from conftest import EXAMPLES, require_cc
+    from conftest import EXAMPLES, c_build_command, require_cc
 
-    C_COMPILER = require_cc()
+    require_cc()
     for example in sorted(EXAMPLES.glob("*.apik")):
         c_file = tmp_path / f"{example.stem}.c"
         result = compiler.compile(example.read_text(encoding="utf-8"))
         c_file.write_text(result.c_source, encoding="utf-8")
         build = subprocess.run(
-            [C_COMPILER, "-std=c11", "-pedantic-errors", "-Wall", "-Wextra", "-Werror",
-             "-o", str(tmp_path / example.stem), str(c_file), *(f"-l{lib}" for lib in result.link_libraries)],
+            c_build_command(c_file, tmp_path / example.stem, libraries=result.link_libraries, werror=True),
             capture_output=True, text=True,
         )
-        assert build.returncode == 0, f"{example.name}: {build.stderr}"
+        # cl reports errors on stdout.
+        assert build.returncode == 0, f"{example.name}: {build.stderr}{build.stdout}"
 
 
 # -- Bug 11: huge number literals crashed or hung the compiler ---------------
@@ -351,13 +351,14 @@ def test_output_before_a_runtime_error_comes_first(compiler, tmp_path):
     import os
     import subprocess
 
-    from conftest import STRICT_FLAGS, require_cc
+    from conftest import c_build_command, require_cc
 
+    require_cc()
     result = compiler.compile("print 1\nx = 9223372036854775807\nx = x + 1\n", "t.apik")
     c_file = tmp_path / "prog.c"
     c_file.write_text(result.c_source, encoding="utf-8")
     exe = tmp_path / ("prog.exe" if os.name == "nt" else "prog")
-    subprocess.run([require_cc(), *STRICT_FLAGS, "-o", str(exe), str(c_file)], check=True)
+    subprocess.run(c_build_command(c_file, exe), check=True)
     # One pipe for both streams, so the order is the order they were written.
     proc = subprocess.run([str(exe)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
     # Windows' abort() may add a line of its own after ours.
