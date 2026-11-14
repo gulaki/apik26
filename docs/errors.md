@@ -60,7 +60,7 @@ Every code has at least one example in [`examples/errors/`](../examples/errors/)
 | E0401 | number-too-large | A literal does not fit the type it gets: an integer beyond i64, a float that rounds to infinity (above about 1.8e308 for f64, 3.4e38 for f32), or an integer that is not exact in the float type it meets (`f + 16777217` with `f` an f32). |
 | E0501 | type-mismatch | An assignment whose value does not convert losslessly to the variable's type, which was fixed by its first assignment. A note points at that assignment. Convert explicitly, e.g. `f64(n)`. |
 | E0502 | no-common-type | An operator or comparison mixes types that no type holds exactly, such as i64 and f64. Convert one side with a cast. |
-| E0503 | constant-overflow | An integer constant expression, computed exactly, has a result that does not fit its type. |
+| E0503 | constant-overflow | An integer constant expression, computed exactly, has a result that does not fit its type. Past 2**16384 in magnitude no type can hold it, and the message says "any type". Long values are shown rounded, such as `1.0715e+301`. |
 | E0504 | constant-division-by-zero | `//` or `%` by zero in an integer constant expression, such as `10 // 0`. |
 | E0505 | not-a-truth-value | A float used as a condition, as an operand of `not`, `and` or `or`, or in `bool(x)`. Only a bool or an integer can be tested for truth; a float would make NaN true and -0.0 false. Compare it explicitly: `x != 0.0`. |
 | E0506 | bool-operator | Arithmetic (`+ - * / // % **`, unary `-` and `+`) or ordering (`< <= > >=`) on a bool. A bool is not a number; convert it with `i64(flag)`, or compare it with `==` and `!=`. |

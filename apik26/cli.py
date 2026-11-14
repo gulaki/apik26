@@ -63,6 +63,9 @@ def _check_options(parser: argparse.ArgumentParser, args) -> None:
         parser.error("--web-assets needs --target wasm")
     if args.web_assets is not None and args.shell == "node":
         parser.error("--web-assets needs --shell web")
+    if args.build is not None and args.target == "c" and args.output is not None and not args.output.suffix:
+        # The executable is the C file's name without its suffix.
+        parser.error(f"--build needs a C file name with a suffix, such as -o {args.output}.c")
     if args.target == "wasm":
         args.shell = args.shell or "web"
         args.web_assets = args.web_assets or "vendored"
@@ -87,7 +90,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def _run(args, filename: str) -> int:
     try:
-        source = args.source.read_text(encoding="utf-8")
+        # utf-8-sig: a byte order mark, which some Windows editors write, is not part of the program.
+        source = args.source.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError) as exc:
         diags = Diagnostics(filename)
         reason = exc.strerror if isinstance(exc, OSError) and exc.strerror else str(exc)

@@ -270,3 +270,134 @@ def test_generated_c_builds_without_any_warning(compiler, tmp_path):
             capture_output=True, text=True,
         )
         assert build.returncode == 0, f"{example.name}: {build.stderr}"
+
+
+# -- Bug 11: huge number literals crashed or hung the compiler ---------------
+# Python's int() refuses more than 4300 decimal digits, and Fraction("1e1000000000")
+# builds a billion-digit integer. Each case runs in a fresh process, so a hang
+# fails on the timeout instead of stopping the test run.
+
+def _compile_in_process(tmp_path, source):
+    import subprocess
+    import sys
+
+    src = tmp_path / "big.apik"
+    src.write_text(source, encoding="utf-8")
+    return subprocess.run(
+        [sys.executable, "-m", "apik26.cli", str(src), "-o", str(tmp_path / "big.c")],
+        capture_output=True, text=True, timeout=60,
+    )
+
+
+@pytest.mark.parametrize("source, code", [
+    ("x = " + "9" * 5000 + "\n", "E0401"),
+    ("x = 0x" + "f" * 5000 + "\n", "E0401"),
+    ("x = 1e1000000000\n", "E0401"),
+    ("x = 1e" + "0" * 5000 + "999\n", "E0401"),
+    ("x = (2 ** 16000) ** 2\n", "E0503"),
+    ("x = " + " * ".join(["(2 ** 16000)"] * 40) + "\n", "E0503"),
+])
+def test_a_huge_constant_is_an_error_not_a_crash(tmp_path, source, code):
+    run = _compile_in_process(tmp_path, source)
+    assert run.returncode == 1, run.stderr
+    assert f"error[{code}]" in run.stderr
+    # The source line is echoed as it is, but the message stays short.
+    message = run.stderr.splitlines()[0].split("error[", 1)[1]
+    assert len(message) < 100, message
+
+
+@pytest.mark.parametrize("source", [
+    "x = 1e-1000000000\nprint x\n",
+    "x = 0." + "0" * 5000 + "1\nprint x\n",
+    "x = 1." + "3" * 5000 + "\nprint x\n",
+])
+def test_a_long_or_tiny_float_literal_compiles(tmp_path, source):
+    run = _compile_in_process(tmp_path, source)
+    assert run.returncode == 0, run.stderr
+
+
+def test_a_long_float_literal_rounds_once(run_apik):
+    assert run_apik("x = 1." + "3" * 5000 + "\nprint x\n") == "1.33\n"
+    assert run_apik("x = 1e-1000000000\nprint x\n") == "0.00\n"
+
+
+def test_a_constant_too_large_for_every_type_says_so(compiler):
+    # Folding stops once no type can hold the value: 2 ** 32000 here.
+    result = compiler.compile("x = 2 ** 16000 * 2 ** 16000 - 1\n")
+    assert [d.message for d in result.errors] == [
+        "constant expression 9.1172e+9632 does not fit in any type"]
+
+
+def test_a_long_number_in_a_message_is_shortened(compiler):
+    (error,) = compiler.compile("print 2 ** 1000\n").errors
+    assert error.message == "constant expression 1.0715e+301 does not fit in i64"
+    (error,) = compiler.compile("print 9223372036854775807 + 1\n").errors
+    assert error.message == "constant expression 9223372036854775808 does not fit in i64"
+
+
+# -- Bug 12: a runtime error lost or reordered the output before it ----------
+# abort() need not flush stdout (glibc's does not), and stdout is buffered
+# when it is not a terminal.
+
+def test_output_before_a_runtime_error_is_kept(build_apik):
+    from conftest import extra_flags
+
+    proc = build_apik("print 1\nx = 9223372036854775807\nx = x + 1\n", extra_flags())("")
+    assert proc.returncode != 0
+    assert proc.stdout == "1\n"
+
+
+def test_output_before_a_runtime_error_comes_first(compiler, tmp_path):
+    import os
+    import subprocess
+
+    from conftest import STRICT_FLAGS, require_cc
+
+    result = compiler.compile("print 1\nx = 9223372036854775807\nx = x + 1\n", "t.apik")
+    c_file = tmp_path / "prog.c"
+    c_file.write_text(result.c_source, encoding="utf-8")
+    exe = tmp_path / ("prog.exe" if os.name == "nt" else "prog")
+    subprocess.run([require_cc(), *STRICT_FLAGS, "-o", str(exe), str(c_file)], check=True)
+    # One pipe for both streams, so the order is the order they were written.
+    proc = subprocess.run([str(exe)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
+    # Windows' abort() may add a line of its own after ours.
+    assert proc.stdout.splitlines()[:2] == ["1", "t.apik:3:7: runtime error: integer overflow"]
+
+
+# -- Bug 13: a NaN printed as "-nan" on some platforms -----------------------
+# x86 makes inf - inf a NaN with the sign bit set, and glibc, musl (wasm) and
+# Windows print that as "-nan" or "-nan(ind)".
+
+@pytest.mark.parametrize("program", [
+    "x = 1.0 / 0.0\nprint x - x\n",
+    "x = 1.0 / 0.0\nprint 0.0 * x\n",
+    "y = 0.0\nprint -(y / y)\n",
+    "x = 1.0f / 0.0f\nprint x - x\n",
+])
+def test_every_nan_prints_as_nan(run_apik, program):
+    assert run_apik(program) == "nan\n"
+
+
+# -- Bug 14: `-o prog --build make` built the C file over itself ------------
+# The executable is the C file's name without its suffix, so with no suffix
+# the Makefile's rule was `prog: prog`.
+
+def test_build_needs_a_c_file_with_a_suffix(tmp_path, capsys):
+    src = tmp_path / "p.apik"
+    src.write_text("print 1\n", encoding="utf-8")
+    with pytest.raises(SystemExit) as info:
+        main([str(src), "-o", str(tmp_path / "prog"), "--build", "make"])
+    assert info.value.code == 2
+    assert "--build needs a C file name with a suffix" in capsys.readouterr().err
+    assert not (tmp_path / "prog").exists()
+
+
+# -- Bug 15: a UTF-8 byte order mark was an unexpected character ------------
+# Windows editors such as Notepad can start a UTF-8 file with one.
+
+def test_a_byte_order_mark_is_ignored(tmp_path):
+    src = tmp_path / "bom.apik"
+    src.write_bytes(b"\xef\xbb\xbfprint 1\n")
+    out = tmp_path / "bom.c"
+    assert main([str(src), "-o", str(out)]) == 0
+    assert "puts" in out.read_text(encoding="utf-8") or "printf" in out.read_text(encoding="utf-8")

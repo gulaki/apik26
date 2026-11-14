@@ -112,5 +112,4 @@ def test_literal_spelling(compiler, program, expected):
 
 
 def test_mixed_float_widths_widen_the_f32_operand(compiler):
-    assert "((v_f + ((double)v_g)))" in c_source(compiler, "f = 1.0\ng = 1.0f\nprint (f + g)\n").replace(
-        "printf(\"%.2f\\n\", ", "(")
+    assert "apik_print_f64(v_f + ((double)v_g));" in c_source(compiler, "f = 1.0\ng = 1.0f\nprint (f + g)\n")

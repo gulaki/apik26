@@ -40,6 +40,9 @@ the same. A program that uses a C library function, so far a float `**`,
 at the end of the `cc` command. (`--build make` and `--build ninja` do this
 for you.)
 
+A source file is UTF-8. A byte order mark at its start, which some Windows
+editors write, is ignored.
+
 The same program also builds as WebAssembly, to run in a browser terminal or
 under Node, with no change to the source: `--target wasm` (see the
 [README](../README.md#run-in-the-browser)).
@@ -57,7 +60,9 @@ under Node, with no change to the source: `--target wasm` (see the
 
 `print` takes a string or a value. A string is printed as written, followed
 by a newline. Its escapes are `\"`, `\\`, `\n`, `\r` and `\t`. Integers print
-as integers, floats with two decimals, and bools as `true` or `false`.
+as integers, floats with two decimals, and bools as `true` or `false`. Every
+NaN prints as `nan`, whatever its sign bit, so the output is the same on
+every platform.
 
 ```apik
 print "100% sure, and \"quoted\""
@@ -709,6 +714,9 @@ with a nonzero exit status:
 - an integer `**` with a negative exponent;
 - `//` or `%` by zero (float division by zero gives `inf` or `nan`);
 - `i64(x)` where `x` is NaN, infinite or out of range.
+
+Everything the program printed before the error comes out first, even when
+the output goes to a file or a pipe.
 
 ```text
 prog.apik:4:11: runtime error: integer overflow

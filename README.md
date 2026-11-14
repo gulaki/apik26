@@ -47,6 +47,9 @@ apik26 examples/factorial.apik -o build/factorial.c --build ninja    # build/bui
 ninja -C build
 ```
 
+With `--build` the C file needs a suffix such as `.c`, because the program
+is named after the C file without it.
+
 Other options: `--ast` prints the syntax tree, `--build-output PATH` puts the
 build file elsewhere, and `--diagnostics-format json` prints errors as JSON.
 

@@ -11,6 +11,7 @@ type yet, so the rule is tested once over all of them.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from fractions import Fraction
 
@@ -138,6 +139,57 @@ def round_float(value: Fraction, t: ScalarType) -> Fraction | None:
     if rounded >= Fraction(2) ** (t.max_exponent + 1):
         return None
     return rounded if value > 0 else -rounded
+
+
+# No value of 2**16384 or more in magnitude fits any type: f128's largest is
+# just below it. Constant folding stops there (semantics.py), and float
+# literals further out than 10**±5000 are clamped, since 10**5000 is past
+# every float type and 10**-5000 rounds to 0 in every one (f128's smallest
+# subnormal is 2**-16494, about 6e-4966).
+LIMIT_BITS = 16384
+_DECIMAL_EXPONENT_LIMIT = 5000
+
+# int() refuses more than 4300 decimal digits (Python's guard against slow
+# conversions), but a program may hold a longer literal.
+_INT_DIGITS = 4000
+
+
+def decimal_int(digits: str) -> int:
+    """The value of a string of decimal digits, however long."""
+    if len(digits) <= _INT_DIGITS:
+        return int(digits or "0")
+    half = len(digits) // 2
+    return decimal_int(digits[:-half]) * 10 ** half + decimal_int(digits[-half:])
+
+
+_FLOAT_TEXT = re.compile(r"([0-9]*)\.?([0-9]*)(?:[eE]([+-]?)([0-9]+))?")
+
+
+def decimal_fraction(text: str) -> Fraction:
+    """The exact value of a float literal's text (no `_`, no `f` suffix).
+
+    Unlike Fraction(text), it does not build a billion-digit integer for
+    `1e1000000000`: a value past the float types is clamped (see
+    _DECIMAL_EXPONENT_LIMIT), which rounds the same way.
+    """
+    whole, fraction, sign, exponent_digits = _FLOAT_TEXT.fullmatch(text).groups()
+    digits = (whole + fraction).lstrip("0")
+    if not digits:
+        return Fraction(0)
+    exponent_digits = (exponent_digits or "0").lstrip("0") or "0"
+    if len(exponent_digits) > 9:
+        exponent = (-1 if sign == "-" else 1) * 10 ** 9  # far past either limit
+    else:
+        exponent = (-1 if sign == "-" else 1) * int(exponent_digits)
+    exponent -= len(fraction)
+    # The value is digits * 10**exponent, with 10**(magnitude - 1) <= value < 10**magnitude.
+    magnitude = len(digits) + exponent
+    if magnitude > _DECIMAL_EXPONENT_LIMIT:
+        return Fraction(10) ** _DECIMAL_EXPONENT_LIMIT
+    if magnitude < -_DECIMAL_EXPONENT_LIMIT:
+        return Fraction(0)
+    value = decimal_int(digits)
+    return Fraction(value * 10 ** exponent) if exponent >= 0 else Fraction(value, 10 ** -exponent)
 
 
 def round_to_f32(value: Fraction) -> float:

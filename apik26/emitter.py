@@ -122,8 +122,10 @@ def _helper(code: str, includes=(), needs=(), libraries=()) -> _Helper:
 # helpers above it.
 _HELPERS: dict[str, _Helper] = {
     "apik_trap": _helper("""
-/* Stops the program at a failed runtime check. */
+/* Stops the program at a failed runtime check. stdout is flushed first:
+   abort() need not do it, and the output came before the error. */
 static _Noreturn void apik_trap(int site, const char *what) {
+    fflush(stdout);
 #ifdef APIK_COLOR_ERRORS
     /* Defined by the web shell's build: its stderr is always a terminal. */
     fprintf(stderr, "\\033[31m%s: runtime error: %s\\033[0m\\n", apik_sites[site], what);
@@ -351,6 +353,19 @@ static int64_t apik_f64_to_i64(double x, int site) {
     return (int64_t)x;
 }
 """, includes=["stdint.h"], needs=["apik_trap"]),
+    # printf shows a NaN as "nan" or "-nan" by its sign bit, which depends on
+    # the CPU (x86 gives inf - inf the sign bit) and the C library ("-nan(ind)"
+    # on Windows). Every NaN prints as "nan", as in Python. An f32 argument
+    # is promoted to double, exactly.
+    "apik_print_f64": _helper("""
+static void apik_print_f64(double x) {
+    if (isnan(x)) {
+        puts("nan");
+    } else {
+        printf("%.2f\\n", x);
+    }
+}
+""", includes=["math.h", "stdio.h"]),
     # A double -> float conversion of a value out of range is undefined (C11
     # 6.3.1.5), so handle those values here, rounding as IEEE 754 does:
     # infinity from FLT_MAX plus half an ulp (0x1.ffffffp+127) upward,
@@ -688,8 +703,7 @@ class CEmitter:
                 self._includes.add("inttypes.h")
                 self._line(f'printf("%" PRId64 "\\n", {self._expr(stmt.value)});')
             else:
-                # An f32 argument is promoted to double, which %f expects.
-                self._line(f'printf("%.2f\\n", {self._expr(stmt.value)});')
+                self._line(f"{self._use('apik_print_f64')}({_without_outer_parentheses(self._expr(stmt.value))});")
         elif isinstance(stmt, Input):
             symbol = self._scopes[-1].lookup(stmt.name)
             self._line(f"{c_variable(stmt.name)} = {self._use(_READ[symbol.type])}();")
@@ -870,7 +884,7 @@ class CEmitter:
             self._c_type(t)
             return c_int_literal(value, t)
         if isinstance(expr, FloatLit):
-            return c_float_literal(types.round_float(Fraction(expr.text), t), t)
+            return c_float_literal(types.round_float(types.decimal_fraction(expr.text), t), t)
         if isinstance(expr, Variable):
             return c_variable(expr.name)
         if isinstance(expr, Grouped):
@@ -926,7 +940,7 @@ class CEmitter:
             return self._nonzero_constant(expr.value if isinstance(expr, Grouped) else expr.operand)
         if isinstance(expr, FloatLit):
             # The value C sees: a literal such as 1e-400 rounds to 0.0.
-            return types.round_float(Fraction(expr.text), self._model.type_of(expr)) != 0
+            return types.round_float(types.decimal_fraction(expr.text), self._model.type_of(expr)) != 0
         value = self._model.constant(expr)
         return value is not None and value != 0
 

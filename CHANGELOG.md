@@ -25,6 +25,32 @@ requests; only 0.0.1 and 0.1.0 were named at the time. The roadmap's stages (M1,
 [`docs/whitepaper.md`](docs/whitepaper.md#4-roadmap)) are plans, not version
 numbers.
 
+## Unreleased
+
+### Fixed
+
+- A runtime error no longer loses or reorders what the program printed
+  before it: stdout is flushed before the error message. On Linux the output
+  was lost whenever it went to a file or a pipe, and on Windows it came after
+  the error.
+- Every NaN prints as `nan`. On Linux, Windows and WebAssembly a NaN with
+  its sign bit set, such as `inf - inf` on x86, printed as `-nan` or
+  `-nan(ind)`.
+- A number literal of more than 4300 digits, or one with an exponent such
+  as `1e1000000000`, no longer crashes or hangs the compiler; it is reported
+  as E0401, or rounds to 0 when it is that small.
+- Constant folding stops at 2**16384, past every type, with E0503 "does not
+  fit in any type", instead of building ever larger numbers or crashing
+  while printing one. Long values in messages are shown rounded, such as
+  `1.0715e+301`.
+- `-o prog --build make` (a C file name without a suffix) is an error. The
+  executable would have had the C file's name, and the build file compiled
+  the C file over itself.
+- A UTF-8 byte order mark at the start of a source file is ignored instead
+  of being an unexpected character.
+- A syntax error after an operator says "expected an expression" instead of
+  listing every token that can start one.
+
 ## 0.7.0 - 2026-11-11
 
 Pull requests #20 and #23.
