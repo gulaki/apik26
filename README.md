@@ -159,7 +159,9 @@ lists tools that must be there, from `cc`, `ubsan`, `make`, `node` and
 and every push to `main`: Linux with gcc (Python 3.10, the oldest supported)
 and with clang and UBSan on every program, macOS on Intel (Apple silicon is
 tested locally before a pull request), Windows with MinGW-w64 gcc,
-and the WebAssembly tests with Emscripten and node.
+and the WebAssembly tests with Emscripten and node. A Windows job with
+Microsoft's `cl` (`CC=cl`; no UBSan) runs too, but does not fail the run yet:
+it shows what MSVC still rejects or warns about.
 
 The [coverage workflow](.github/workflows/coverage.yml) measures line and
 branch coverage of the compiler on every pull request, and fails below the
