@@ -26,7 +26,7 @@ from fractions import Fraction
 
 import pytest
 
-from conftest import C_COMPILER, STRICT_FLAGS, random_count, random_seed, require_cc, require_ubsan
+from conftest import c_build_command, random_count, random_seed, require_cc, require_ubsan
 from apik26.emitter import _HELPERS
 from apik26.types import F32, F64, round_float, round_to_f32
 
@@ -214,9 +214,9 @@ def run_harness(t, pairs, tmp_path, flags):
     c_file.write_text(helper_source(f"apik_floordiv_{suffix}", f"apik_mod_{suffix}") + HARNESS_MAIN[t],
                       encoding="utf-8")
     exe = tmp_path / (f"harness_{suffix}.exe" if os.name == "nt" else f"harness_{suffix}")
-    build = subprocess.run([C_COMPILER, *STRICT_FLAGS, "-Werror", *flags, "-o", str(exe), str(c_file), "-lm"],
-                           capture_output=True, text=True)
-    assert build.returncode == 0, build.stderr
+    build = subprocess.run(c_build_command(c_file, exe, flags, ["m"], werror=True), capture_output=True, text=True)
+    # cl reports errors on stdout.
+    assert build.returncode == 0, build.stderr + build.stdout
     stdin = "".join(f"{to_bits(x, t)} {to_bits(y, t)}\n" for x, y in pairs)
     proc = subprocess.run([str(exe)], input=stdin, capture_output=True, text=True, timeout=60)
     assert proc.returncode == 0, proc.stderr

@@ -29,6 +29,10 @@ numbers.
 
 ### Fixed
 
+- The generated C builds without warnings under MSVC: the `#pragma GCC
+  diagnostic` lines around a self-comparison (`a == a`) are only seen by
+  compilers that define `__GNUC__`, since MSVC warns about a pragma it does
+  not know (C4068). CI now builds and runs the test suite with MSVC too.
 - A runtime error no longer loses or reorders what the program printed
   before it: stdout is flushed before the error message. On Linux the output
   was lost whenever it went to a file or a pipe, and on Windows it came after

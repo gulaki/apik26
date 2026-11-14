@@ -660,12 +660,17 @@ class CEmitter:
             # `a == a` is valid APIK26, but gcc and clang warn that the C
             # comparison is always true or false. Silence that warning for
             # this statement only (docs/design/lowering.md, "Self-comparisons").
+            # Only for compilers that know the pragma: MSVC warns about it.
             self._self_comparison = False
             self._body += [
+                "#if defined(__GNUC__)",
                 "#pragma GCC diagnostic push",
                 '#pragma GCC diagnostic ignored "-Wtautological-compare"',
+                "#endif",
                 indent + text,
+                "#if defined(__GNUC__)",
                 "#pragma GCC diagnostic pop",
+                "#endif",
             ]
             return
         self._body.append(indent + text)

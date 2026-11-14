@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 
-from conftest import C_COMPILER, STRICT_FLAGS, require_ubsan
+from conftest import require_ubsan
 
 
 def float_division_check() -> list[str]:

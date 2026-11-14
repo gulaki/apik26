@@ -1,7 +1,8 @@
 # The whole test suite on every pull request and every push to main, on
 # Linux (gcc and clang), macOS, Windows (MinGW-w64 gcc) and WebAssembly
 # (Emscripten and node). Each job names in APIK_REQUIRE the tools it
-# installs, so a test that needs one fails instead of skipping.
+# installs, so a test that needs one fails instead of skipping. The
+# windows-msvc job builds with Microsoft's cl.
 #
 # The weekly workflow calls it with `latest: true` (the newest runner images
 # and Emscripten) and with more, reseeded, random cases.
@@ -116,3 +117,41 @@ jobs:
       - run: python -m pip install -e ".[test]"
       - run: emcc --version
       - run: python -m pytest -ra tests/test_wasm.py
+
+  # The suite with Microsoft's cl. There is no UBSan for cl, and the build
+  # files --build writes use gcc-style flags, so those tests skip.
+  windows-msvc:
+    runs-on: ${{ inputs.latest && 'windows-latest' || 'windows-2025' }}
+    timeout-minutes: 30
+    env:
+      CC: cl
+      APIK_REQUIRE: cc,node
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      # cl needs the environment vcvars64.bat sets up (PATH, INCLUDE, LIB);
+      # pass it on to the later steps.
+      - name: Load the MSVC environment
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && set" | ForEach-Object {
+            if ($_ -match '^(PATH|INCLUDE|LIB|LIBPATH)=(.*)$') {
+              "$($Matches[1])=$($Matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            }
+          }
+      - run: python -m pip install -e ".[test]"
+      # cl prints its version when run with no arguments.
+      - name: cl version
+        shell: pwsh
+        run: |
+          & cl 2>&1 | Select-Object -First 1
+          exit 0
+      - run: python -m pytest -ra
