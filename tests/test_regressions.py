@@ -6,6 +6,8 @@ up once a real C compiler gets involved.
 """
 import pytest
 
+from conftest import C_COMPILER, is_msvc
+
 from apik26.build import BUILD_SYSTEMS, BuildConfig
 from apik26.cli import main
 from apik26.diagnostics import Diagnostics
@@ -169,6 +171,7 @@ def test_build_file_paths_are_relative_to_the_build_file(tmp_path, system):
     assert "../bin/prog" in text
 
 
+@pytest.mark.skipif(is_msvc(C_COMPILER), reason="the generated build files use gcc-style flags, which cl does not take")
 def test_generated_makefile_builds_the_program(tmp_path, run_apik):
     # run_apik is only requested so the test skips without a C compiler.
     import subprocess

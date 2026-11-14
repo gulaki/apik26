@@ -7,6 +7,8 @@ is wrapped in `#pragma GCC diagnostic` lines (docs/design/lowering.md,
 compilers do not warn about it."""
 import pytest
 
+from conftest import werror_flags
+
 PUSH = "#pragma GCC diagnostic push"
 IGNORE = '#pragma GCC diagnostic ignored "-Wtautological-compare"'
 POP = "#pragma GCC diagnostic pop"
@@ -54,5 +56,5 @@ def test_only_the_statements_that_need_it_are_wrapped(compiler):
     ("a = 1\nif a == a {\n    print 7\n}\n", "7\n"),
 ])
 def test_self_comparisons_build_without_warnings_and_run(build_apik, source, output):
-    proc = build_apik(source, ["-Werror"])("")
+    proc = build_apik(source, werror_flags())("")
     assert (proc.returncode, proc.stdout) == (0, output), proc.stderr

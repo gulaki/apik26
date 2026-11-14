@@ -112,6 +112,11 @@ def is_msvc(compiler: str | None) -> bool:
 MSVC_STRICT_FLAGS = ["/nologo", "/std:c11", "/W4"]
 
 
+def werror_flags() -> list[str]:
+    """The flag that turns warnings into errors, for this C compiler."""
+    return ["/WX"] if is_msvc(C_COMPILER) else ["-Werror"]
+
+
 def c_build_command(c_file: Path, exe: Path, flags=(), libraries=(), werror: bool = False) -> list[str]:
     """The command that builds `c_file` into `exe` with the strict flags,
     for gcc-style compilers or for cl. `werror` turns warnings into errors."""
