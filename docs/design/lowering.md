@@ -111,6 +111,7 @@ lowering of fallible expressions, and the error exit are specified in
 | `bool(n)` | `(v_n != 0)` |
 | `i64(flag)` | `((int64_t)v_flag)` |
 | `print flag` | `puts(v_flag ? "true" : "false");` |
+| `print x` (a float) | `apik_print_f64(v_x);`: `printf("%.2f\n", x)`, except that every NaN prints as `nan` (printf shows the sign bit, which x86 sets for `inf - inf`) |
 
 An expression temporary such as `t_1` is declared, set to 0, at the top of
 the enclosing C block, next to the hoisted variables, and assigned inside the
