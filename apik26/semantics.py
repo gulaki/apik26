@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Context
 from fractions import Fraction
 
 from .ast import (
@@ -148,6 +149,18 @@ def _fold(op: str, a: int, b: int) -> int | None:
     if op == "//":
         return a // b
     return a % b
+
+
+def _show(value: int) -> str:
+    """An integer for a message: exact while short, else like 1.0715e+301."""
+    if abs(value) < 10 ** 21:
+        return str(value)
+    return format(Context(prec=5).create_decimal(value), ".4e")
+
+
+def _shorten(text: str) -> str:
+    """A literal's spelling for a message, cut down if it is very long."""
+    return text if len(text) <= 40 else f"{text[:20]}...{text[-8:]} ({len(text)} characters)"
 
 
 def _count(n: int, noun: str) -> str:
@@ -517,14 +530,19 @@ class SemanticAnalyzer:
                 return None
             # |base ** exponent| >= 2 ** ((bits - 1) * exponent): past 2 ** 16384
             # nothing can hold it (not even a future f128), so do not compute it.
-            if abs(base) >= 2 and (abs(base).bit_length() - 1) * exponent > 16384:
+            if abs(base) >= 2 and (abs(base).bit_length() - 1) * exponent > types.LIMIT_BITS:
                 self._diagnostics.error(codes.CONSTANT_OVERFLOW, expr.location,
-                                        value=f"{base} ** {exponent}", type="any type")
+                                        value=f"{_show(base)} ** {exponent}", type="any type")
                 return None
         if isinstance(left, _Const) and isinstance(right, _Const):
             value = _fold(expr.operator, left.value, right.value)
             if value is None:
                 self._diagnostics.error(codes.CONSTANT_DIVISION_BY_ZERO, expr.operator_location)
+                return None
+            if value.bit_length() > types.LIMIT_BITS:
+                # No type holds it, and folding on would only make it bigger.
+                self._diagnostics.error(codes.CONSTANT_OVERFLOW, expr.location,
+                                        value=_show(value), type="any type")
                 return None
             return _Const(value)
         if not isinstance(left, ScalarType) and not isinstance(right, ScalarType):
@@ -684,7 +702,7 @@ class SemanticAnalyzer:
             else:
                 self._does_not_fit(expr, value, target)
         elif isinstance(expr, FloatLit):
-            if types.round_float(Fraction(expr.text), target) is None:
+            if types.round_float(types.decimal_fraction(expr.text), target) is None:
                 self._does_not_fit(expr, expr.text, target)
         elif isinstance(expr, (Grouped, Unary)):
             self._settle(expr.value if isinstance(expr, Grouped) else expr.operand, target, exact)
@@ -695,6 +713,6 @@ class SemanticAnalyzer:
     def _does_not_fit(self, expr: Expr, value, target: ScalarType) -> None:
         text = _literal_text(expr)
         if text is not None:
-            self._diagnostics.error(codes.NUMBER_TOO_LARGE, expr.location, value=text, type=target)
+            self._diagnostics.error(codes.NUMBER_TOO_LARGE, expr.location, value=_shorten(text), type=target)
         else:
-            self._diagnostics.error(codes.CONSTANT_OVERFLOW, expr.location, value=value, type=target)
+            self._diagnostics.error(codes.CONSTANT_OVERFLOW, expr.location, value=_show(value), type=target)

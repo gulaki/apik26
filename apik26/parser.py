@@ -14,6 +14,7 @@ from .ast import (
     Stmt, Unary, Variable, While,
 )
 from . import diagnostics as codes
+from . import types
 from .diagnostics import Diagnostics, Span
 from .errors import ParseError
 from .render import render_text
@@ -159,7 +160,11 @@ class ASTBuilder(Transformer):
 
     def int_literal(self, items):
         text = str(items[0])
-        return IntLit(int(text, 0), text, _loc(items[0]))
+        if text[:2].lower() in ("0x", "0o", "0b"):
+            value = int(text, 0)  # no digit limit for these bases
+        else:
+            value = types.decimal_int(text.replace("_", ""))
+        return IntLit(value, text, _loc(items[0]))
 
     def float_literal(self, items):
         text = str(items[0]).replace("_", "")
@@ -405,7 +410,8 @@ def describe_expected(expected: set[str]) -> str:
     remaining = set(expected)
     words: list[str] = []
     for word, group in _GROUPS:
-        if group <= remaining:
+        # `not` cannot follow an operator, but what can is still an expression.
+        if group - {"NOT"} <= remaining:
             words.append(word)
             remaining -= group
     if "_NL" in remaining:
