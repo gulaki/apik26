@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from decimal import Context
 from fractions import Fraction
 
 from .ast import (
@@ -152,10 +151,22 @@ def _fold(op: str, a: int, b: int) -> int | None:
 
 
 def _show(value: int) -> str:
-    """An integer for a message: exact while short, else like 1.0715e+301."""
-    if abs(value) < 10 ** 21:
+    """An integer for a message: exact while short, else like 1.0715e+301.
+
+    Integer arithmetic only: str() refuses more than 4300 digits, and so does
+    the decimal module where it is the pure-Python one.
+    """
+    magnitude = abs(value)
+    if magnitude < 10 ** 21:
         return str(value)
-    return format(Context(prec=5).create_decimal(value), ".4e")
+    exponent = (magnitude.bit_length() - 1) * 30103 // 100000  # log10, from below
+    while 10 ** (exponent + 1) <= magnitude:
+        exponent += 1
+    digits = round(Fraction(magnitude, 10 ** (exponent - 4)))  # 5 digits, half to even
+    if digits == 10 ** 5:
+        digits, exponent = 10 ** 4, exponent + 1
+    text = str(digits)
+    return f"{'-' if value < 0 else ''}{text[0]}.{text[1:]}e+{exponent}"
 
 
 def _shorten(text: str) -> str:
